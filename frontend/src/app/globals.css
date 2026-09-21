@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: var(--font-inter), 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    @apply border-stone-200;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    @apply text-stone-900 bg-stone-50;
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-green-600;
+  }
+
+  /* Minimum touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exception for inline text links and small badges */
+  a:not([class*="px-"]):not([class*="py-"]):not([class*="p-"]):not([class*="flex"]):not([class*="grid"]):not([class*="block"]) {
+    min-height: unset;
+    min-width: unset;
+  }
+}
+
+/* MapLibre GL styles */
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+/* Custom scrollbar */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d6d3d1 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #d6d3d1;
+    border-radius: 3px;
+  }
+}
+
+/* Demo data watermark */
+.demo-watermark {
+  position: relative;
+}
+
+.demo-watermark::after {
+  content: 'DEMO DATA';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 3rem;
+  font-weight: 800;
+  color: rgba(217, 119, 6, 0.07);
+  pointer-events: none;
+  z-index: 1;
+  white-space: nowrap;
+  letter-spacing: 0.15em;
+}
+
+/* Contamination pulse animation (subtle) */
+@keyframes pulse-contamination {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.15); }
+}
+
+.animate-contamination-pulse {
+  animation: pulse-contamination 3s ease-in-out infinite;
+}
+
+/* Slide transitions */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}

@@ -1,4 +1,4 @@
-# Bhujal AI — AquaShield
+# Bhujal AI
 **Chromium Groundwater Response & Remediation Intelligence Platform**
 *Core Tagline: From contamination data to community action.*
 *Focus Region: Kanpur Nagar – Kanpur Dehat – Fatehpur, Uttar Pradesh, India*

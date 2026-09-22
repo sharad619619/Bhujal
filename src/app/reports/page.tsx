@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useTranslation } from '@/lib/i18n';
 import { getDb, CommunityReportRecord } from '@/lib/db/store';
-import type { WaterSource, Village, GroundwaterPoint, ContaminationSource, School } from '@/lib/types';
+import type { WaterSource, Village, GroundwaterPoint, ContaminationSource } from '@/lib/types';
 import { 
   Filter, 
   Image as ImageIcon, 
@@ -58,207 +58,224 @@ type ViewMode = 'split' | 'cards' | 'registry' | 'map';
 export interface CommunityMapLayerDef {
   id: string;
   label: string;
-  type: 'point' | 'polygon';
+  category: 'water' | 'hazard' | 'community' | 'infrastructure';
   color: string;
-  borderColor?: string;
+  activeColor: string;
+  badgeBg: string;
+  badgeBorder: string;
   icon: string;
-  visible: boolean;
-  dataSource: string;
-  statusRules: string;
   description: string;
+  defaultVisible: boolean;
+  isModelEstimated?: boolean;
 }
 
-export const COMMUNITY_MAP_LAYER_DEFINITIONS: Record<string, CommunityMapLayerDef> = {
-  safeSources: {
+export const COMMUNITY_MAP_LAYERS: CommunityMapLayerDef[] = [
+  {
     id: 'safeSources',
     label: 'Safe Drinking Sources',
-    type: 'point',
-    color: '#15803d', // Green
-    borderColor: '#ffffff',
+    category: 'water',
+    color: '#15803d',
+    activeColor: 'bg-emerald-700',
+    badgeBg: 'bg-emerald-100 text-emerald-950',
+    badgeBorder: 'border-emerald-400',
     icon: '●',
-    visible: true,
-    dataSource: 'waterSources (status === safe / Cr < 0.05 mg/L)',
-    statusRules: 'WHO Permissible Standard: Total Cr < 0.05 mg/L',
-    description: 'Verified potable drinking groundwater wells and deep borewells'
+    description: 'Verified Potable Wells, Solar RO & JJM Standposts (Cr ≤ 0.05 mg/L)',
+    defaultVisible: true,
   },
-  contaminatedSources: {
+  {
     id: 'contaminatedSources',
     label: 'Contaminated / Restricted',
-    type: 'point',
-    color: '#dc2626', // Red
-    borderColor: '#ffffff',
+    category: 'hazard',
+    color: '#dc2626',
+    activeColor: 'bg-red-700',
+    badgeBg: 'bg-red-100 text-red-950',
+    badgeBorder: 'border-red-400',
     icon: '●',
-    visible: true,
-    dataSource: 'waterSources (status === do_not_use | restricted)',
-    statusRules: 'Hazardous: Total Cr >= 0.05 mg/L or hexavalent chromium detected',
-    description: 'Borewells and handpumps exceeding maximum contaminant levels'
+    description: 'Hazardous Unconfined Aquifer Sources Exceeding Permissible Limits',
+    defaultVisible: true,
   },
-  plumes: {
+  {
     id: 'plumes',
-    label: 'Cr(VI) Dispersion Plume',
-    type: 'polygon',
-    color: '#fb7185', // Pink / Rose tinted
-    borderColor: '#e11d48',
-    icon: '▱',
-    visible: true,
-    dataSource: 'GeoJSON Cr(VI) Hydrogeological Plume Model',
-    statusRules: 'MODEL-ESTIMATED: 2D Advection-Dispersion Solute Transport',
-    description: 'Predicted subsurface hexavalent chromium contaminant dispersion boundary'
+    label: 'Hexavalent Cr(VI) Dispersion Plume',
+    category: 'hazard',
+    color: '#fb7185',
+    activeColor: 'bg-rose-600',
+    badgeBg: 'bg-rose-100 text-rose-950',
+    badgeBorder: 'border-rose-400',
+    icon: '▰',
+    description: 'Hydrogeological Model-Estimated Subsurface Dispersion Footprint',
+    defaultVisible: true,
+    isModelEstimated: true,
   },
-  reports: {
+  {
     id: 'reports',
-    label: 'Citizen Field Observations',
-    type: 'point',
-    color: '#f59e0b', // Amber
-    borderColor: '#ffffff',
+    label: 'Citizen Ground Observations',
+    category: 'community',
+    color: '#f59e0b',
+    activeColor: 'bg-amber-600',
+    badgeBg: 'bg-amber-100 text-amber-950',
+    badgeBorder: 'border-amber-400',
     icon: '⚠️',
-    visible: true,
-    dataSource: 'communityReports',
-    statusRules: 'Citizen telemetry & field verified incidents',
-    description: 'Ground observations filed by residents, panchayat & health workers'
+    description: 'Participatory Field Telemetry & Contamination Observations',
+    defaultVisible: true,
   },
-  villages: {
+  {
     id: 'villages',
-    label: 'Village Community Hubs',
-    type: 'point',
-    color: '#12372a', // Deep Forest Emerald
-    borderColor: '#ffffff',
-    icon: 'V',
-    visible: true,
-    dataSource: 'villages',
-    statusRules: 'Census population centers',
-    description: 'Gram panchayats and residential settlement clusters'
+    label: 'Village Population Hubs',
+    category: 'community',
+    color: '#12372a',
+    activeColor: 'bg-stone-800',
+    badgeBg: 'bg-emerald-50 text-emerald-950',
+    badgeBorder: 'border-emerald-300',
+    icon: '●',
+    description: 'Regional Panchayats & High-Density Settlement Clusters',
+    defaultVisible: true,
   },
-  groundwaterPoints: {
+  {
     id: 'groundwaterPoints',
-    label: 'Piezometric Monitoring Wells',
-    type: 'point',
-    color: '#0284c7', // Sky Blue
-    borderColor: '#ffffff',
-    icon: 'GW',
-    visible: true,
-    dataSource: 'groundwaterPoints',
-    statusRules: 'CGWB & UPPCB monitoring piezometers',
-    description: 'Surveillance piezometers measuring aquifer depth & hydrochemistry'
+    label: 'Aquifer Piezometers',
+    category: 'infrastructure',
+    color: '#0284c7',
+    activeColor: 'bg-sky-700',
+    badgeBg: 'bg-sky-100 text-sky-950',
+    badgeBorder: 'border-sky-400',
+    icon: '■',
+    description: 'Automated Piezometric Transducers Logging Water Table & Salinity',
+    defaultVisible: true,
   },
-  contaminationSources: {
+  {
     id: 'contaminationSources',
-    label: 'Industrial & Contamination Sources',
-    type: 'point',
-    color: '#581c87', // Deep Purple
-    borderColor: '#ffffff',
+    label: 'Point Emission Vectors',
+    category: 'infrastructure',
+    color: '#7c3aed',
+    activeColor: 'bg-purple-700',
+    badgeBg: 'bg-purple-100 text-purple-950',
+    badgeBorder: 'border-purple-400',
     icon: '🏭',
-    visible: true,
-    dataSource: 'contaminationSources',
-    statusRules: 'Tannery waste mounds, unlined lagoons, and chemical dump sites',
-    description: 'Primary origin points of hexavalent chromium leaching'
-  }
-};
+    description: 'Tannery Industrial Estates, Unlined Drains & Hazardous Dump Zones',
+    defaultVisible: true,
+  },
+];
 
-// Selected Entity polymorphic union
-export type SelectedMapEntity =
-  | { type: 'report'; report: CommunityReportRecord }
-  | { type: 'safeSource'; source: WaterSource & { activeMeasurement?: any } }
-  | { type: 'contaminatedSource'; source: WaterSource & { activeMeasurement?: any } }
-  | { type: 'plume'; zoneId: string; name: string; status: string; contaminant: string; temporalContext: string; confidence: string; associatedVillage: string; nearbyWaterSources: string; maxObservedCr: string; flowDirection: string; hydraulicConductivity: string; notes: string }
-  | { type: 'village'; village: Village }
-  | { type: 'groundwaterPoint'; point: GroundwaterPoint }
-  | { type: 'contaminationSource'; source: ContaminationSource }
-  | null;
-
-// Helper to generate dynamic GeoJSON plumes based on temporal year
-function generatePlumeGeoJSON(year: number) {
-  // If year before 2020: pre-surveillance baseline (no formal plume model)
+// Plume GeoJSON Generator with temporal advection scaling
+function generatePlumeGeoJSON(year: number): any {
   if (year < 2020) {
     return {
       type: 'FeatureCollection',
-      features: []
+      features: [],
     };
   }
 
-  // Expansion scale factor (2020 = 0.45, 2022 = 0.65, 2024 = 0.85, 2026 = 1.0)
-  const factor = Math.max(0.45, Math.min(1.0, 0.45 + ((year - 2020) / 6) * 0.55));
+  // Expansion coefficient: 2020 baseline (0.75) up to 2026 peak (1.35)
+  const growth = 0.75 + (year - 2020) * 0.10;
 
-  // Helper to create smooth oval polygon
-  const createOval = (lon: number, lat: number, rx: number, ry: number, angleDeg: number) => {
-    const coords: [number, number][] = [];
+  const raniaCenter = [80.301, 26.448];
+  const khanchandpurCenter = [80.342, 26.465];
+
+  const generateRotatedEllipse = (center: number[], semiMajor: number, semiMinor: number, angleDeg: number) => {
+    const coords: number[][] = [];
     const rad = (angleDeg * Math.PI) / 180;
     const cosA = Math.cos(rad);
     const sinA = Math.sin(rad);
-    const steps = 36;
-    for (let i = 0; i <= steps; i++) {
-      const theta = (i * 2 * Math.PI) / steps;
-      const x0 = rx * Math.cos(theta);
-      const y0 = ry * Math.sin(theta);
-      const xRot = x0 * cosA - y0 * sinA;
-      const yRot = x0 * sinA + y0 * cosA;
-      coords.push([lon + xRot, lat + yRot]);
+
+    for (let i = 0; i <= 36; i++) {
+      const theta = (i * 2 * Math.PI) / 36;
+      const x = semiMajor * Math.cos(theta);
+      const y = semiMinor * Math.sin(theta);
+      const rotX = x * cosA - y * sinA;
+      const rotY = x * sinA + y * cosA;
+      coords.push([center[0] + rotX, center[1] + rotY]);
     }
     return coords;
   };
 
-  // Plume 1: Rania Tannery Industrial Plume
-  const raniaCoords = createOval(80.3015, 26.4485, 0.016 * factor, 0.009 * factor, -35);
-
-  // Plume 2: Khanchandpur Heavy Solute Plume
-  const khanchandpurCoords = createOval(80.3420, 26.4650, 0.019 * factor, 0.011 * factor, -25);
+  const raniaBoundary = generateRotatedEllipse(raniaCenter, 0.024 * growth, 0.013 * growth, -30);
+  const khanchandpurBoundary = generateRotatedEllipse(khanchandpurCenter, 0.021 * growth, 0.011 * growth, -25);
 
   return {
     type: 'FeatureCollection',
     features: [
       {
         type: 'Feature',
-        id: 'PLUME-001',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [raniaCoords]
-        },
+        id: 'plume-rania',
         properties: {
           zoneId: 'PLUME-001',
-          name: 'Rania South-East Groundwater Advection Plume',
+          name: 'Rania Hexavalent Chromium Dispersion Plume',
           status: 'Model Estimated',
           contaminant: 'Hexavalent Chromium — Cr(VI)',
-          temporalContext: `${year} Spatial Dispersion Horizon`,
-          confidence: '87% Hydrogeological Confidence',
+          temporalHorizon: `${year}`,
+          temporalContext: `${year} Dispersion Boundary`,
+          confidence: '89% Hydrogeological Confidence',
           associatedVillage: 'Rania (V-002)',
-          nearbyWaterSources: 'HP-010, HP-016, HP-017, HP-020',
-          maxObservedCr: '0.34 mg/L Cr(VI) (6.8× WHO Standard)',
-          flowDirection: 'South-Southeast (1.4 m/km regional hydraulic gradient)',
-          hydraulicConductivity: '14.2 m/day (Unconfined sandy alluvium)',
-          notes: 'High-risk solute transport plume originating from legacy chromite ore processing residue (COPR) dumps along the Rania industrial fringe.'
-        }
+          nearbyWaterSources: 'HP-010, HP-011, HP-014',
+          maxObservedCr: '0.34 mg/L Cr(VI)',
+          flowDirection: 'South-Southeast (1.4 m/km regional gradient)',
+          hydraulicConductivity: '14.2 m/day (Medium Alluvial Sand)',
+          plumeAreaKm2: (1.8 * growth).toFixed(2),
+          notes: 'High-risk unconfined aquifer advection zone moving southeast toward agricultural tube-wells.',
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [raniaBoundary],
+        },
       },
       {
         type: 'Feature',
-        id: 'PLUME-002',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [khanchandpurCoords]
-        },
+        id: 'plume-khanchandpur',
         properties: {
           zoneId: 'PLUME-002',
-          name: 'Khanchandpur Deep Alluvial Leachate Dispersion Plume',
+          name: 'Khanchandpur Tannery Sludge Leaching Zone',
           status: 'Model Estimated',
           contaminant: 'Hexavalent Chromium — Cr(VI)',
-          temporalContext: `${year} Spatial Dispersion Horizon`,
+          temporalHorizon: `${year}`,
+          temporalContext: `${year} Dispersion Boundary`,
           confidence: '92% Hydrogeological Confidence',
           associatedVillage: 'Khanchandpur (V-001)',
-          nearbyWaterSources: 'HP-001, HP-002, HP-003, HP-005, HP-008',
-          maxObservedCr: '0.72 mg/L Cr(VI) (14.4× WHO Standard)',
-          flowDirection: 'East-Southeast along unconfined micaceous sand aquifer',
-          hydraulicConductivity: '18.5 m/day (High permeability)',
-          notes: 'Persistent regional plume affecting 12 shallow community borewells and domestic handpumps.'
-        }
-      }
-    ]
+          nearbyWaterSources: 'HP-001, HP-003, HP-007',
+          maxObservedCr: '0.28 mg/L Cr(VI)',
+          flowDirection: 'East-Southeast (0.9 m/km gradient)',
+          hydraulicConductivity: '11.8 m/day (Fine-Medium Silty Sand)',
+          plumeAreaKm2: (1.3 * growth).toFixed(2),
+          notes: 'Legacy chrome cake dumpsite leaching into shallow unconfined handpumps during monsoon percolation.',
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [khanchandpurBoundary],
+        },
+      },
+    ],
   };
 }
 
-function ReportsDashboardContent() {
-  const searchParams = useSearchParams();
-  const deepReportId = searchParams.get('reportId');
+// Entity types that can be selected on map or cards
+export type SelectedMapEntity =
+  | { type: 'report'; report: CommunityReportRecord }
+  | { type: 'safeSource'; source: WaterSource }
+  | { type: 'contaminatedSource'; source: WaterSource }
+  | {
+      type: 'plume';
+      zoneId: string;
+      name: string;
+      status: string;
+      contaminant: string;
+      temporalHorizon: string;
+      confidence: string;
+      associatedVillage: string;
+      nearbyWaterSources: string;
+      maxObservedCr: string;
+      flowDirection: string;
+      hydraulicConductivity: string;
+      plumeAreaKm2: string;
+      notes: string;
+    }
+  | { type: 'village'; village: Village }
+  | { type: 'groundwaterPoint'; point: GroundwaterPoint }
+  | { type: 'contaminationSource'; source: ContaminationSource };
 
+function CommunityReportsContent() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const deepReportId = searchParams.get('reportId') || searchParams.get('id');
 
   // Core Data States
   const [reports, setReports] = useState<CommunityReportRecord[]>([]);
@@ -268,35 +285,32 @@ function ReportsDashboardContent() {
   const [contaminationSources, setContaminationSources] = useState<ContaminationSource[]>([]);
   const [deletedCount, setDeletedCount] = useState<number>(0);
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [villageFilter, setVillageFilter] = useState('All');
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // View Mode & Selection
+  // View & UI States
   const [viewMode, setViewMode] = useState<ViewMode>('split');
-  const [selectedEntity, setSelectedEntity] = useState<SelectedMapEntity>(null);
+  const [selectedEntity, setSelectedEntity] = useState<SelectedMapEntity | null>(null);
+  const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
   const [fullModalReport, setFullModalReport] = useState<CommunityReportRecord | null>(null);
-  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [reportToDelete, setReportToDelete] = useState<CommunityReportRecord | null>(null);
-  const [deleteReason, setDeleteReason] = useState('Resolved / Decommissioned site');
-  const [customDeleteReason, setCustomDeleteReason] = useState('');
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Temporal Horizon Engine (2018–2026)
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [villageFilter, setVillageFilter] = useState<string>('All');
+  const [priorityFilter, setPriorityFilter] = useState<string>('All');
+  const [categoryFilter, setCategoryFilter] = useState<string>('All');
+
+  // Temporal Horizon Engine
   const [temporalYear, setTemporalYear] = useState<number>(2026);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const playbackTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // MapLibre Reference & Layers
+  // MapLibre Instances
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<any>(null);
   const maplibreglRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
   const [mapLoaded, setMapLoaded] = useState<boolean>(false);
-  const [activeMarkerId, setActiveMarkerId] = useState<string | null>(null);
 
   // Layer Toggles
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
@@ -309,7 +323,7 @@ function ReportsDashboardContent() {
     contaminationSources: true,
   });
 
-  // Load fresh data
+  // Load fresh data from store
   const loadData = useCallback(() => {
     const db = getDb();
     setReports(db.getCommunityReports());
@@ -322,18 +336,12 @@ function ReportsDashboardContent() {
 
   useEffect(() => {
     loadData();
-
-    const handleUpdate = () => {
-      loadData();
-    };
-
+    const handleUpdate = () => loadData();
     window.addEventListener('bhujal_data_updated', handleUpdate);
-    return () => {
-      window.removeEventListener('bhujal_data_updated', handleUpdate);
-    };
+    return () => window.removeEventListener('bhujal_data_updated', handleUpdate);
   }, [loadData]);
 
-  // Deep link handler
+  // Handle deep link
   useEffect(() => {
     if (deepReportId && reports.length > 0) {
       const target = reports.find(r => r.id === deepReportId);
@@ -344,39 +352,38 @@ function ReportsDashboardContent() {
     }
   }, [deepReportId, reports]);
 
-  // Toast timer
+  // Toast auto-hide
   useEffect(() => {
     if (!toastMessage) return;
     const timer = setTimeout(() => setToastMessage(null), 4000);
     return () => clearTimeout(timer);
   }, [toastMessage]);
 
-  // Temporal Horizon Playback
+  // Playback timer
   useEffect(() => {
     if (isPlaying) {
       playbackTimerRef.current = setInterval(() => {
         setTemporalYear(prev => {
           if (prev >= 2026) {
             setIsPlaying(false);
-            return 2026;
+            return 2018;
           }
           return prev + 1;
         });
-      }, 1300);
-    } else if (playbackTimerRef.current) {
-      clearInterval(playbackTimerRef.current);
-      playbackTimerRef.current = null;
+      }, 1800);
+    } else {
+      if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
     }
     return () => {
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
     };
   }, [isPlaying]);
 
-  // Dynamically calculate water sources for the selected temporal year
+  // Water sources evaluated for the selected temporal year
   const temporalWaterSources = useMemo(() => {
     const db = getDb();
-    return db.getWaterSourcesByYear(temporalYear);
-  }, [temporalYear]);
+    return db.getWaterSourcesByYear ? db.getWaterSourcesByYear(temporalYear) : rawWaterSources;
+  }, [temporalYear, rawWaterSources]);
 
   // Filtered Community Reports based on temporal year, search and filters
   const filteredReports = useMemo(() => {
@@ -423,28 +430,234 @@ function ReportsDashboardContent() {
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [reports, temporalYear, statusFilter, villageFilter, priorityFilter, categoryFilter, searchQuery, villages]);
 
+  // Summary Counters
+  const safeSourcesCount = useMemo(() => temporalWaterSources.filter(s => s.status === 'safe').length, [temporalWaterSources]);
+  const contaminatedSourcesCount = useMemo(() => temporalWaterSources.filter(s => s.status === 'do_not_use' || s.status === 'restricted').length, [temporalWaterSources]);
+  const activeReportsCount = useMemo(() => filteredReports.length, [filteredReports]);
+  const criticalReportsCount = useMemo(() => filteredReports.filter(r => r.priority === 'Critical').length, [filteredReports]);
+
   // Categories list
   const categories = useMemo(() => {
     return Array.from(new Set(reports.map(r => r.category))).filter(Boolean);
   }, [reports]);
 
-  // Dynamic counts
-  const safeSourcesCount = temporalWaterSources.filter(s => s.status === 'safe').length;
-  const contaminatedSourcesCount = temporalWaterSources.filter(s => s.status === 'do_not_use' || s.status === 'restricted').length;
-  const activeReportsCount = filteredReports.length;
-  const criticalReportsCount = filteredReports.filter(r => r.priority === 'Critical').length;
+  // Safe GeoJSON builders
+  const safeSourcesGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: temporalWaterSources
+        .filter(s => s.status === 'safe')
+        .map(s => ({
+          type: 'Feature',
+          id: s.id,
+          properties: {
+            entityType: 'safeSource',
+            id: s.id,
+            name: s.name || s.id,
+            villageId: s.villageId,
+            type: s.type,
+            status: s.status,
+            populationServed: s.populationServed,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [s.coordinates.lon, s.coordinates.lat],
+          },
+        })),
+    };
+  }, [temporalWaterSources]);
 
-  // Initialize MapLibre GIS Map
+  const contaminatedSourcesGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: temporalWaterSources
+        .filter(s => s.status === 'do_not_use' || s.status === 'restricted')
+        .map(s => ({
+          type: 'Feature',
+          id: s.id,
+          properties: {
+            entityType: 'contaminatedSource',
+            id: s.id,
+            name: s.name || s.id,
+            villageId: s.villageId,
+            type: s.type,
+            status: s.status,
+            populationServed: s.populationServed,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [s.coordinates.lon, s.coordinates.lat],
+          },
+        })),
+    };
+  }, [temporalWaterSources]);
+
+  const reportsGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: filteredReports.map(r => {
+        const lat = typeof (r.coordinates as any)?.lat === 'number' ? (r.coordinates as any).lat : 26.4481;
+        const lon = typeof (r.coordinates as any)?.lon === 'number' ? (r.coordinates as any).lon : 80.0102;
+        return {
+          type: 'Feature',
+          id: r.id,
+          properties: {
+            entityType: 'report',
+            id: r.id,
+            title: r.title || r.category,
+            category: r.category,
+            priority: r.priority,
+            status: r.status,
+            villageId: r.villageId,
+            locationName: r.locationName,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [lon, lat],
+          },
+        };
+      }),
+    };
+  }, [filteredReports]);
+
+  const villagesGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: villages.map(v => ({
+        type: 'Feature',
+        id: v.id,
+        properties: {
+          entityType: 'village',
+          id: v.id,
+          name: v.name,
+          hindiName: v.hindiName,
+          population: v.population,
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [v.coordinates.lon, v.coordinates.lat],
+        },
+      })),
+    };
+  }, [villages]);
+
+  const piezometersGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: groundwaterPoints.map(gp => {
+        const lon = gp.coordinates?.lon ?? (gp as any).location?.coordinates?.[0] ?? 80.34;
+        const lat = gp.coordinates?.lat ?? (gp as any).location?.coordinates?.[1] ?? 26.46;
+        return {
+          type: 'Feature',
+          id: gp.id,
+          properties: {
+            entityType: 'groundwaterPoint',
+            id: gp.id,
+            name: gp.name,
+            depth: gp.depth || (gp as any).depthM || 15,
+            villageId: gp.villageId,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [lon, lat],
+          },
+        };
+      }),
+    };
+  }, [groundwaterPoints]);
+
+  const contaminationSourcesGeoJSON = useMemo(() => {
+    return {
+      type: 'FeatureCollection',
+      features: contaminationSources.map(cs => {
+        const lon = cs.coordinates?.lon ?? (cs as any).location?.coordinates?.[0] ?? 80.34;
+        const lat = cs.coordinates?.lat ?? (cs as any).location?.coordinates?.[1] ?? 26.46;
+        return {
+          type: 'Feature',
+          id: cs.id,
+          properties: {
+            entityType: 'contaminationSource',
+            id: cs.id,
+            name: cs.name,
+            type: cs.type,
+            status: cs.status,
+            impactRadius: cs.estimatedImpactRadius || 500,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [lon, lat],
+          },
+        };
+      }),
+    };
+  }, [contaminationSources]);
+
+  // Highlight Feature GeoJSON for selected entity
+  const highlightGeoJSON = useMemo(() => {
+    if (!selectedEntity) {
+      return { type: 'FeatureCollection', features: [] };
+    }
+
+    let coords: [number, number] | null = null;
+    if (selectedEntity.type === 'report') {
+      const lat = typeof (selectedEntity.report.coordinates as any)?.lat === 'number' ? (selectedEntity.report.coordinates as any).lat : 26.4481;
+      const lon = typeof (selectedEntity.report.coordinates as any)?.lon === 'number' ? (selectedEntity.report.coordinates as any).lon : 80.0102;
+      coords = [lon, lat];
+    } else if (selectedEntity.type === 'safeSource' || selectedEntity.type === 'contaminatedSource') {
+      coords = [selectedEntity.source.coordinates.lon, selectedEntity.source.coordinates.lat];
+    } else if (selectedEntity.type === 'village') {
+      coords = [selectedEntity.village.coordinates.lon, selectedEntity.village.coordinates.lat];
+    } else if (selectedEntity.type === 'groundwaterPoint') {
+      const lon = selectedEntity.point.coordinates?.lon ?? (selectedEntity.point as any).location?.coordinates?.[0] ?? 80.34;
+      const lat = selectedEntity.point.coordinates?.lat ?? (selectedEntity.point as any).location?.coordinates?.[1] ?? 26.46;
+      coords = [lon, lat];
+    } else if (selectedEntity.type === 'contaminationSource') {
+      const lon = selectedEntity.source.coordinates?.lon ?? (selectedEntity.source as any).location?.coordinates?.[0] ?? 80.34;
+      const lat = selectedEntity.source.coordinates?.lat ?? (selectedEntity.source as any).location?.coordinates?.[1] ?? 26.46;
+      coords = [lon, lat];
+    }
+
+    if (!coords) {
+      return { type: 'FeatureCollection', features: [] };
+    }
+
+    return {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { selected: true },
+          geometry: {
+            type: 'Point',
+            coordinates: coords,
+          },
+        },
+      ],
+    };
+  }, [selectedEntity]);
+
+  // Initialize MapLibre GL GIS Map
   useEffect(() => {
-    if (mapInstanceRef.current || !mapContainer.current) return;
-
     let isMounted = true;
 
+    // Load MapLibre GL JS dynamically
     import('maplibre-gl')
-      .then((maplibreglModule: any) => {
+      .then(maplibreModule => {
         if (!isMounted || !mapContainer.current) return;
-        const maplibregl = maplibreglModule.default || maplibreglModule;
+        const maplibregl = (maplibreModule as any).default || maplibreModule;
         maplibreglRef.current = maplibregl;
+
+        // Ensure MapLibre CSS is injected
+        if (!document.getElementById('maplibre-css')) {
+          const link = document.createElement('link');
+          link.id = 'maplibre-css';
+          link.rel = 'stylesheet';
+          link.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+          document.head.appendChild(link);
+        }
+
+        // Avoid re-initializing if instance exists
+        if (mapInstanceRef.current) return;
 
         const map = new maplibregl.Map({
           container: mapContainer.current,
@@ -467,7 +680,7 @@ function ReportsDashboardContent() {
             ],
           },
           center: [80.32, 26.45],
-          zoom: 11,
+          zoom: 11.2,
           attributionControl: false,
         });
 
@@ -477,64 +690,256 @@ function ReportsDashboardContent() {
           if (!isMounted) return;
           mapInstanceRef.current = map;
 
-          // Add Cr(VI) Dispersion Plume GeoJSON Source & Layers
-          const plumeData = generatePlumeGeoJSON(temporalYear);
-          map.addSource('cr-plumes-source', {
+          // 1. Cr(VI) Plume Source & Layers (Pink / Rose)
+          map.addSource('source-crvi-plume', {
             type: 'geojson',
-            data: plumeData,
+            data: generatePlumeGeoJSON(temporalYear),
           });
 
-          // Plume Fill Layer
           map.addLayer({
-            id: 'cr-plumes-fill',
+            id: 'crvi-plume-fill',
             type: 'fill',
-            source: 'cr-plumes-source',
+            source: 'source-crvi-plume',
             paint: {
-              'fill-color': '#fb7185', // Pink / Rose
-              'fill-opacity': 0.28,
+              'fill-color': '#fb7185',
+              'fill-opacity': 0.35,
             },
           });
 
-          // Plume Boundary Line
           map.addLayer({
-            id: 'cr-plumes-line',
+            id: 'crvi-plume-line',
             type: 'line',
-            source: 'cr-plumes-source',
+            source: 'source-crvi-plume',
             paint: {
               'line-color': '#e11d48',
-              'line-width': 2,
+              'line-width': 2.5,
               'line-dasharray': [3, 2],
             },
           });
 
-          // Clickable interaction on Plume Polygon!
-          map.on('click', 'cr-plumes-fill', (e: any) => {
-            if (e.features && e.features[0]) {
-              const props = e.features[0].properties;
-              setSelectedEntity({
-                type: 'plume',
-                zoneId: props.zoneId || 'PLUME-001',
-                name: props.name || 'Cr(VI) Dispersion Plume',
-                status: props.status || 'Model Estimated',
-                contaminant: props.contaminant || 'Hexavalent Chromium — Cr(VI)',
-                temporalContext: props.temporalContext || `${temporalYear} Dispersion Horizon`,
-                confidence: props.confidence || '87% Hydrogeological Confidence',
-                associatedVillage: props.associatedVillage || 'Rania Cluster',
-                nearbyWaterSources: props.nearbyWaterSources || 'HP-010, HP-016',
-                maxObservedCr: props.maxObservedCr || '0.34 mg/L Cr(VI)',
-                flowDirection: props.flowDirection || 'South-Southeast (1.4 m/km)',
-                hydraulicConductivity: props.hydraulicConductivity || '14.2 m/day',
-                notes: props.notes || 'Subsurface advection plume modeling.'
-              });
-              setActiveMarkerId(props.zoneId);
+          // 2. Safe Sources Layer (GREEN)
+          map.addSource('source-safe-sources', {
+            type: 'geojson',
+            data: safeSourcesGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-safe-sources',
+            type: 'circle',
+            source: 'source-safe-sources',
+            paint: {
+              'circle-color': '#15803d',
+              'circle-radius': 7.5,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // 3. Contaminated Sources Layer (RED / AMBER)
+          map.addSource('source-contaminated-sources', {
+            type: 'geojson',
+            data: contaminatedSourcesGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-contaminated-sources',
+            type: 'circle',
+            source: 'source-contaminated-sources',
+            paint: {
+              'circle-color': [
+                'match',
+                ['get', 'status'],
+                'do_not_use', '#dc2626',
+                '#d97706'
+              ],
+              'circle-radius': 7.5,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // 4. Village Population Hubs Layer
+          map.addSource('source-villages', {
+            type: 'geojson',
+            data: villagesGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-villages',
+            type: 'circle',
+            source: 'source-villages',
+            paint: {
+              'circle-color': '#12372a',
+              'circle-radius': 9,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#a7f3d0',
+            },
+          });
+
+          // 5. Aquifer Piezometers Layer (Sky Blue)
+          map.addSource('source-piezometers', {
+            type: 'geojson',
+            data: piezometersGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-piezometers',
+            type: 'circle',
+            source: 'source-piezometers',
+            paint: {
+              'circle-color': '#0284c7',
+              'circle-radius': 6.5,
+              'circle-stroke-width': 1.5,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // 6. Point Contamination Sources Layer (Purple)
+          map.addSource('source-contamination-sources', {
+            type: 'geojson',
+            data: contaminationSourcesGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-contamination-sources',
+            type: 'circle',
+            source: 'source-contamination-sources',
+            paint: {
+              'circle-color': '#7c3aed',
+              'circle-radius': 8,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#e9d5ff',
+            },
+          });
+
+          // 7. Community Reports Layer (AMBER ⚠️)
+          map.addSource('source-community-reports', {
+            type: 'geojson',
+            data: reportsGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-community-reports',
+            type: 'circle',
+            source: 'source-community-reports',
+            paint: {
+              'circle-color': '#f59e0b',
+              'circle-radius': 8.5,
+              'circle-stroke-width': 2.5,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+
+          // 8. Dynamic Selection Highlight Halo
+          map.addSource('source-selection-halo', {
+            type: 'geojson',
+            data: highlightGeoJSON,
+          });
+
+          map.addLayer({
+            id: 'layer-selection-halo',
+            type: 'circle',
+            source: 'source-selection-halo',
+            paint: {
+              'circle-color': '#f59e0b',
+              'circle-radius': 16,
+              'circle-opacity': 0.15,
+              'circle-stroke-width': 3,
+              'circle-stroke-color': '#d97706',
+            },
+          });
+
+          // Single Unified Click Dispatcher across all GIS layers
+          map.on('click', (e: any) => {
+            const interactiveLayers = [
+              'layer-community-reports',
+              'layer-safe-sources',
+              'layer-contaminated-sources',
+              'layer-villages',
+              'layer-piezometers',
+              'layer-contamination-sources',
+              'crvi-plume-fill',
+            ].filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+
+            const queried = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
+
+            if (queried.length > 0) {
+              const topFeature = queried[0];
+              const layerId = topFeature.layer.id;
+              const props = topFeature.properties;
+
+              if (layerId === 'crvi-plume-fill') {
+                setSelectedEntity({
+                  type: 'plume',
+                  zoneId: props.zoneId || 'PLUME-001',
+                  name: props.name || 'Cr(VI) Dispersion Plume',
+                  status: props.status || 'Model Estimated',
+                  contaminant: props.contaminant || 'Hexavalent Chromium — Cr(VI)',
+                  temporalHorizon: props.temporalHorizon || `${temporalYear}`,
+                  confidence: props.confidence || '89% Hydrogeological Confidence',
+                  associatedVillage: props.associatedVillage || 'Regional Cluster',
+                  nearbyWaterSources: props.nearbyWaterSources || 'HP-010, HP-016',
+                  maxObservedCr: props.maxObservedCr || '0.34 mg/L Cr(VI)',
+                  flowDirection: props.flowDirection || 'South-Southeast (1.4 m/km)',
+                  hydraulicConductivity: props.hydraulicConductivity || '14.2 m/day',
+                  plumeAreaKm2: props.plumeAreaKm2 || '2.4',
+                  notes: props.notes || 'Subsurface advection plume modeling.',
+                });
+                setActiveMarkerId(props.zoneId);
+              } else if (layerId === 'layer-community-reports') {
+                const r = reports.find(item => item.id === props.id);
+                if (r) {
+                  setSelectedEntity({ type: 'report', report: r });
+                  setActiveMarkerId(r.id);
+                }
+              } else if (layerId === 'layer-safe-sources') {
+                const s = temporalWaterSources.find(item => item.id === props.id);
+                if (s) {
+                  setSelectedEntity({ type: 'safeSource', source: s });
+                  setActiveMarkerId(s.id);
+                }
+              } else if (layerId === 'layer-contaminated-sources') {
+                const s = temporalWaterSources.find(item => item.id === props.id);
+                if (s) {
+                  setSelectedEntity({ type: 'contaminatedSource', source: s });
+                  setActiveMarkerId(s.id);
+                }
+              } else if (layerId === 'layer-villages') {
+                const v = villages.find(item => item.id === props.id);
+                if (v) {
+                  setSelectedEntity({ type: 'village', village: v });
+                  setActiveMarkerId(v.id);
+                }
+              } else if (layerId === 'layer-piezometers') {
+                const gp = groundwaterPoints.find(item => item.id === props.id);
+                if (gp) {
+                  setSelectedEntity({ type: 'groundwaterPoint', point: gp });
+                  setActiveMarkerId(gp.id);
+                }
+              } else if (layerId === 'layer-contamination-sources') {
+                const cs = contaminationSources.find(item => item.id === props.id);
+                if (cs) {
+                  setSelectedEntity({ type: 'contaminationSource', source: cs });
+                  setActiveMarkerId(cs.id);
+                }
+              }
             }
           });
 
-          map.on('mouseenter', 'cr-plumes-fill', () => {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-          map.on('mouseleave', 'cr-plumes-fill', () => {
-            map.getCanvas().style.cursor = '';
+          // Hover cursor
+          map.on('mousemove', (e: any) => {
+            const interactiveLayers = [
+              'layer-community-reports',
+              'layer-safe-sources',
+              'layer-contaminated-sources',
+              'layer-villages',
+              'layer-piezometers',
+              'layer-contamination-sources',
+              'crvi-plume-fill',
+            ].filter(id => map.getLayer(id) && map.getLayoutProperty(id, 'visibility') !== 'none');
+
+            const queried = map.queryRenderedFeatures(e.point, { layers: interactiveLayers });
+            map.getCanvas().style.cursor = queried.length > 0 ? 'pointer' : '';
           });
 
           setMapLoaded(true);
@@ -553,400 +958,234 @@ function ReportsDashboardContent() {
     };
   }, []);
 
-  // Update Plume GeoJSON and Layer Visibility dynamically when temporal year or toggles change
+  // Update GeoJSON Sources when data changes
   useEffect(() => {
     if (!mapInstanceRef.current || !mapLoaded) return;
     const map = mapInstanceRef.current;
 
-    const source = map.getSource('cr-plumes-source');
-    if (source) {
-      source.setData(generatePlumeGeoJSON(temporalYear));
-    }
+    const plumeSource = map.getSource('source-crvi-plume');
+    if (plumeSource) plumeSource.setData(generatePlumeGeoJSON(temporalYear));
 
-    if (map.getLayer('cr-plumes-fill')) {
-      map.setLayoutProperty('cr-plumes-fill', 'visibility', activeLayers.plumes ? 'visible' : 'none');
-      map.setLayoutProperty('cr-plumes-line', 'visibility', activeLayers.plumes ? 'visible' : 'none');
-    }
-  }, [temporalYear, activeLayers.plumes, mapLoaded]);
+    const safeSource = map.getSource('source-safe-sources');
+    if (safeSource) safeSource.setData(safeSourcesGeoJSON);
 
-  // Synchronize Markers on Map Canvas
+    const contamSource = map.getSource('source-contaminated-sources');
+    if (contamSource) contamSource.setData(contaminatedSourcesGeoJSON);
+
+    const reportsSource = map.getSource('source-community-reports');
+    if (reportsSource) reportsSource.setData(reportsGeoJSON);
+
+    const villagesSource = map.getSource('source-villages');
+    if (villagesSource) villagesSource.setData(villagesGeoJSON);
+
+    const piezometersSource = map.getSource('source-piezometers');
+    if (piezometersSource) piezometersSource.setData(piezometersGeoJSON);
+
+    const csSource = map.getSource('source-contamination-sources');
+    if (csSource) csSource.setData(contaminationSourcesGeoJSON);
+
+    const highlightSource = map.getSource('source-selection-halo');
+    if (highlightSource) highlightSource.setData(highlightGeoJSON);
+  }, [
+    mapLoaded,
+    temporalYear,
+    safeSourcesGeoJSON,
+    contaminatedSourcesGeoJSON,
+    reportsGeoJSON,
+    villagesGeoJSON,
+    piezometersGeoJSON,
+    contaminationSourcesGeoJSON,
+    highlightGeoJSON,
+  ]);
+
+  // Synchronize Layer Visibility toggles with MapLibre layers
   useEffect(() => {
     if (!mapInstanceRef.current || !mapLoaded) return;
-
-    // Clear old markers
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
-
-    const maplibregl = maplibreglRef.current;
     const map = mapInstanceRef.current;
 
-    // Interactive marker builder
-    const createMarker = (
-      lng: number, 
-      lat: number, 
-      elementHtml: string, 
-      tooltipTitle: string, 
-      tooltipSubtitle: string, 
-      onClick: () => void,
-      isSelected = false
-    ) => {
-      const el = document.createElement('div');
-      el.className = 'cursor-pointer select-none group relative';
-      el.innerHTML = `
-        ${elementHtml}
-        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 bg-[#002116] text-white text-[11px] font-mono py-1.5 px-2.5 rounded-lg shadow-2xl whitespace-nowrap pointer-events-none border border-emerald-500/30">
-          <div class="font-bold text-amber-200">${tooltipTitle}</div>
-          <div class="text-stone-300 text-[10px] mt-0.5">${tooltipSubtitle}</div>
-        </div>
-      `;
-
-      if (isSelected) {
-        el.style.transform = 'scale(1.4)';
-        el.style.zIndex = '50';
+    const toggle = (layerId: string, visible: boolean) => {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
       }
-
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        onClick();
-      });
-
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .addTo(map);
-
-      markersRef.current.push(marker);
     };
 
-    // 1. Citizen Observation Markers (Amber ⚠️)
-    if (activeLayers.reports) {
-      filteredReports.forEach(report => {
-        const lat = typeof (report.coordinates as any)?.lat === 'number' ? (report.coordinates as any).lat : 26.4481;
-        const lon = typeof (report.coordinates as any)?.lon === 'number' ? (report.coordinates as any).lon : 80.0102;
-        const isSelected = activeMarkerId === report.id || (selectedEntity?.type === 'report' && selectedEntity.report.id === report.id);
+    toggle('layer-safe-sources', activeLayers.safeSources);
+    toggle('layer-contaminated-sources', activeLayers.contaminatedSources);
+    toggle('crvi-plume-fill', activeLayers.plumes);
+    toggle('crvi-plume-line', activeLayers.plumes);
+    toggle('layer-community-reports', activeLayers.reports);
+    toggle('layer-villages', activeLayers.villages);
+    toggle('layer-piezometers', activeLayers.groundwaterPoints);
+    toggle('layer-contamination-sources', activeLayers.contaminationSources);
+  }, [activeLayers, mapLoaded]);
 
-        const iconHtml = `
-          <div class="w-6 h-6 rounded-full bg-amber-500 text-[#002116] border-2 ${
-            isSelected ? 'border-red-500 ring-4 ring-red-400/60 scale-125' : 'border-white shadow-md'
-          } flex items-center justify-center font-bold text-xs shadow-lg transition-transform hover:scale-130">
-            ⚠️
-          </div>
-        `;
-
-        createMarker(
-          lon,
-          lat,
-          iconHtml,
-          `${report.id} · ${report.category}`,
-          `${report.locationName || 'Field Incident'} · ${report.priority} Priority`,
-          () => {
-            setSelectedEntity({ type: 'report', report });
-            setActiveMarkerId(report.id);
-          },
-          isSelected
-        );
-      });
+  // Handle Resize when switching view modes
+  useEffect(() => {
+    if (mapInstanceRef.current && (viewMode === 'split' || viewMode === 'map')) {
+      const timer = setTimeout(() => {
+        mapInstanceRef.current?.resize();
+      }, 150);
+      return () => clearTimeout(timer);
     }
+  }, [viewMode]);
 
-    // 2. Safe Water Sources (GREEN ●)
-    if (activeLayers.safeSources) {
-      temporalWaterSources.filter(s => s.status === 'safe').forEach(s => {
-        const isSelected = activeMarkerId === s.id || (selectedEntity?.type === 'safeSource' && selectedEntity.source.id === s.id);
-        const iconHtml = `
-          <div class="w-4 h-4 rounded-full bg-[#15803d] border-2 ${
-            isSelected ? 'border-amber-300 ring-4 ring-amber-400/70 scale-125' : 'border-white shadow-sm'
-          } hover:scale-150 transition-transform"></div>
-        `;
-
-        createMarker(
-          s.coordinates.lon,
-          s.coordinates.lat,
-          iconHtml,
-          `Safe Source: ${s.name || s.id}`,
-          'Verified Potable Water (Cr < 0.05 mg/L)',
-          () => {
-            setSelectedEntity({ type: 'safeSource', source: s });
-            setActiveMarkerId(s.id);
-          },
-          isSelected
-        );
-      });
-    }
-
-    // 3. Contaminated / Restricted Sources (RED ●)
-    if (activeLayers.contaminatedSources) {
-      temporalWaterSources.filter(s => s.status === 'do_not_use' || s.status === 'restricted').forEach(s => {
-        const isCritical = s.status === 'do_not_use';
-        const isSelected = activeMarkerId === s.id || (selectedEntity?.type === 'contaminatedSource' && selectedEntity.source.id === s.id);
-        const iconHtml = `
-          <div class="w-4 h-4 rounded-full ${isCritical ? 'bg-[#dc2626]' : 'bg-[#d97706]'} border-2 ${
-            isSelected ? 'border-amber-300 ring-4 ring-amber-400/70 scale-125' : 'border-white shadow-sm'
-          } hover:scale-150 transition-transform"></div>
-        `;
-
-        createMarker(
-          s.coordinates.lon,
-          s.coordinates.lat,
-          iconHtml,
-          `Hazardous Source: ${s.name || s.id}`,
-          isCritical ? 'CRITICAL: Do Not Drink (>0.05 mg/L Cr)' : 'Restricted Domestic Water',
-          () => {
-            setSelectedEntity({ type: 'contaminatedSource', source: s });
-            setActiveMarkerId(s.id);
-          },
-          isSelected
-        );
-      });
-    }
-
-    // 4. Village Community Hubs (Navy V)
-    if (activeLayers.villages) {
-      villages.forEach(v => {
-        const isSelected = activeMarkerId === v.id || (selectedEntity?.type === 'village' && selectedEntity.village.id === v.id);
-        const iconHtml = `
-          <div class="w-6 h-6 rounded-full bg-[#12372a] text-white border-2 ${
-            isSelected ? 'border-amber-400 ring-4 ring-amber-400/50 scale-125' : 'border-white'
-          } flex items-center justify-center text-[10px] font-bold shadow-md hover:scale-125 transition-transform">
-            V
-          </div>
-        `;
-
-        createMarker(
-          v.coordinates.lon,
-          v.coordinates.lat,
-          iconHtml,
-          `${v.name} (${v.hindiName})`,
-          `Community Cluster · ${v.population.toLocaleString()} Population`,
-          () => {
-            setSelectedEntity({ type: 'village', village: v });
-            setActiveMarkerId(v.id);
-          },
-          isSelected
-        );
-      });
-    }
-
-    // 5. Piezometric Monitoring Wells (Sky Blue GW)
-    if (activeLayers.groundwaterPoints) {
-      groundwaterPoints.forEach(gp => {
-        const isSelected = activeMarkerId === gp.id || (selectedEntity?.type === 'groundwaterPoint' && selectedEntity.point.id === gp.id);
-        const iconHtml = `
-          <div class="w-4 h-4 rounded-md bg-sky-600 text-white border ${
-            isSelected ? 'border-amber-300 ring-4 ring-amber-400/60 scale-125' : 'border-white'
-          } flex items-center justify-center text-[8px] font-bold shadow-sm hover:scale-140 transition-transform">
-            GW
-          </div>
-        `;
-
-        const lon = gp.coordinates?.lon ?? (gp as any).location?.coordinates?.[0] ?? (gp as any).location?.lon ?? 80.34;
-        const lat = gp.coordinates?.lat ?? (gp as any).location?.coordinates?.[1] ?? (gp as any).location?.lat ?? 26.46;
-        const depthVal = gp.depth || (gp as any).depthM || 15;
-
-        createMarker(
-          lon,
-          lat,
-          iconHtml,
-          `Piezometer ${gp.id}`,
-          `${depthVal}m Depth · Unconfined Aquifer`,
-          () => {
-            setSelectedEntity({ type: 'groundwaterPoint', point: gp });
-            setActiveMarkerId(gp.id);
-          },
-          isSelected
-        );
-      });
-    }
-
-    // 6. Contamination Sources (Purple 🏭)
-    if (activeLayers.contaminationSources) {
-      contaminationSources.forEach(cs => {
-        const isSelected = activeMarkerId === cs.id || (selectedEntity?.type === 'contaminationSource' && selectedEntity.source.id === cs.id);
-        const iconHtml = `
-          <div class="w-6 h-6 rounded-lg bg-purple-900 border-2 ${
-            isSelected ? 'border-amber-400 ring-4 ring-amber-400/50 scale-125' : 'border-purple-300'
-          } shadow-lg flex items-center justify-center text-xs hover:scale-125 transition-transform">
-            🏭
-          </div>
-        `;
-
-        const lon = cs.coordinates?.lon ?? (cs as any).location?.coordinates?.[0] ?? (cs as any).location?.lon ?? 80.34;
-        const lat = cs.coordinates?.lat ?? (cs as any).location?.coordinates?.[1] ?? (cs as any).location?.lat ?? 26.46;
-
-        createMarker(
-          lon,
-          lat,
-          iconHtml,
-          cs.name,
-          `Industrial Contamination Source (${cs.status})`,
-          () => {
-            setSelectedEntity({ type: 'contaminationSource', source: cs });
-            setActiveMarkerId(cs.id);
-          },
-          isSelected
-        );
-      });
-    }
-
-  }, [mapLoaded, filteredReports, temporalWaterSources, villages, groundwaterPoints, contaminationSources, activeLayers, activeMarkerId, selectedEntity]);
-
-  // Locate report on map and open its contextual panel
+  // Action: Locate report on map
   const handleLocateOnMap = (report: CommunityReportRecord) => {
     setSelectedEntity({ type: 'report', report });
     setActiveMarkerId(report.id);
-
-    const lat = typeof (report.coordinates as any)?.lat === 'number' ? (report.coordinates as any).lat : 26.4481;
-    const lon = typeof (report.coordinates as any)?.lon === 'number' ? (report.coordinates as any).lon : 80.0102;
-
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo({
-        center: [lon, lat],
-        zoom: 15.5,
-        essential: true,
-      });
-    }
 
     if (viewMode === 'cards' || viewMode === 'registry') {
       setViewMode('split');
     }
 
-    // Scroll to map if needed on mobile
-    if (mapContainer.current && window.innerWidth < 1024) {
-      mapContainer.current.scrollIntoView({ behavior: 'smooth' });
+    const lat = typeof (report.coordinates as any)?.lat === 'number' ? (report.coordinates as any).lat : 26.4481;
+    const lon = typeof (report.coordinates as any)?.lon === 'number' ? (report.coordinates as any).lon : 80.0102;
+
+    if (mapInstanceRef.current) {
+      setTimeout(() => {
+        mapInstanceRef.current.resize();
+        mapInstanceRef.current.flyTo({
+          center: [lon, lat],
+          zoom: 13.5,
+          speed: 1.2,
+          curve: 1.4,
+          essential: true,
+        });
+      }, 100);
     }
   };
 
-  // Reset map zoom
+  // Action: Reset map camera
   const handleResetMapView = () => {
-    setActiveMarkerId(null);
-    setSelectedEntity(null);
     if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo({
         center: [80.32, 26.45],
-        zoom: 11,
-        essential: true,
+        zoom: 11.2,
+        speed: 1.0,
       });
     }
   };
 
-  // GPS Locate
+  // Action: Geolocation
   const handleLocateMe = () => {
-    if (navigator.geolocation && mapInstanceRef.current) {
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         pos => {
-          const { latitude, longitude } = pos.coords;
-          mapInstanceRef.current.flyTo({ center: [longitude, latitude], zoom: 14.5, essential: true });
-          setToastMessage('Map centered on current GPS coordinates.');
+          const { longitude, latitude } = pos.coords;
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 14,
+              speed: 1.2,
+            });
+            setToastMessage(`GPS Located: [${latitude.toFixed(4)}, ${longitude.toFixed(4)}]`);
+          }
         },
         () => {
-          mapInstanceRef.current.flyTo({ center: [80.3015, 26.4485], zoom: 14, essential: true });
-          setToastMessage('GPS unavailable. Centered on Rania sentinel cluster.');
+          setToastMessage('GPS location unavailable. Centering on Kanpur region.');
+          handleResetMapView();
         }
       );
     }
   };
 
-  // Execute Deletion
-  const handleConfirmDelete = () => {
+  // Action: Delete Report Handler
+  const confirmDeleteReport = () => {
     if (!reportToDelete) return;
-
     const db = getDb();
-    const reason = deleteReason === 'Other' ? customDeleteReason || 'Administrative deletion' : deleteReason;
-    const success = db.deleteCommunityReport(reportToDelete.id, reason);
-
+    const success = db.deleteCommunityReport(reportToDelete.id, 'Citizen observation soft-deleted via Community interface');
     if (success) {
-      setToastMessage(`Observation ${reportToDelete.id} successfully removed from registry.`);
       if (selectedEntity?.type === 'report' && selectedEntity.report.id === reportToDelete.id) {
         setSelectedEntity(null);
+        setActiveMarkerId(null);
       }
-      if (fullModalReport?.id === reportToDelete.id) {
-        setFullModalReport(null);
-      }
-      setReportToDelete(null);
-      setCustomDeleteReason('');
+      setToastMessage(`Record ${reportToDelete.id} successfully removed from Community Registry & Map.`);
       loadData();
     }
+    setReportToDelete(null);
   };
 
-  // Restore deleted reports (for easy testing)
+  // Action: Restore Deleted Reports
   const handleRestoreDeleted = () => {
     const db = getDb();
     db.resetDeletedReports();
     loadData();
-    setToastMessage('All previously deleted observations have been restored.');
+    setToastMessage('All soft-deleted community records have been restored.');
   };
 
-  // CSV Export
+  // Action: Export CSV
   const handleExportCsv = () => {
-    const db = getDb();
-    const csvContent = db.exportReportsCsv();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bhujal_community_registry_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setToastMessage('Community Registry CSV exported successfully.');
+    if (filteredReports.length === 0) {
+      setToastMessage('No observations available to export.');
+      return;
+    }
+
+    const headers = ['Report ID', 'Date', 'Priority', 'Category', 'Village', 'Location', 'Status', 'Reporter', 'Verified', 'Description'];
+    const rows = filteredReports.map(r => {
+      const v = villages.find(v => v.id === r.villageId)?.name || r.villageId;
+      return [
+        `"${r.id}"`,
+        `"${r.date}"`,
+        `"${r.priority || 'Medium'}"`,
+        `"${r.category}"`,
+        `"${v}"`,
+        `"${(r.locationName || '').replace(/"/g, '""')}"`,
+        `"${r.status}"`,
+        `"${r.reporterType || r.reporterName || 'Resident'}"`,
+        `"${r.verified ? 'Yes' : 'No'}"`,
+        `"${(r.description || '').replace(/"/g, '""')}"`,
+      ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bhujal_community_reports_${temporalYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setToastMessage(`Exported ${filteredReports.length} records to CSV.`);
   };
 
-  // Status Badge
-  const getStatusBadge = (status: string) => {
-    const s = status.toLowerCase();
-    if (s.includes('report') || s === 'new') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
-          <Clock className="w-3 h-3" /> Reported
-        </span>
-      );
-    }
-    if (s.includes('under_review') || s.includes('review') || s.includes('investigat')) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-          <Clock className="w-3 h-3" /> Under Review
-        </span>
-      );
-    }
-    if (s.includes('field') || s.includes('lab') || s.includes('verified')) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
-          <CheckCircle2 className="w-3 h-3" /> Verified
-        </span>
-      );
-    }
-    if (s.includes('confirm')) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-800 border border-red-200">
-          <AlertCircle className="w-3 h-3" /> Confirmed
-        </span>
-      );
-    }
-    if (s.includes('resolve') || s.includes('closed')) {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3" /> Resolved
-        </span>
-      );
-    }
-    return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-stone-100 text-stone-700 border border-stone-200">{status}</span>;
-  };
-
-  // Priority Badge
   const getPriorityBadge = (priority?: string) => {
     switch (priority) {
       case 'Critical':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-red-100 text-red-800 border border-red-200">Critical</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-100 text-red-800 border border-red-200">CRITICAL</span>;
       case 'High':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-orange-100 text-orange-800 border border-orange-200">High</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-orange-100 text-orange-800 border border-orange-200">HIGH</span>;
       case 'Medium':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-stone-100 text-stone-700 border border-stone-200">Medium</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200">MEDIUM</span>;
       default:
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-stone-100 text-stone-600 border border-stone-200">Low</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-stone-100 text-stone-800 border border-stone-200">LOW</span>;
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes('verified') || s.includes('confirmed') || s.includes('resolved')) {
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3" /> {status}
+        </span>
+      );
+    }
+    if (s.includes('review') || s.includes('pending') || s.includes('investigating')) {
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+          <Clock className="w-3 h-3" /> {status}
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-stone-100 text-stone-700 border border-stone-200">
+        {status}
+      </span>
+    );
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f4fbf7] text-[#0c1f18] font-sans selection:bg-[#c3ebd8] selection:text-[#002116]">
+    <div className="min-h-screen flex flex-col bg-[#fbfbfa] text-stone-900 font-sans selection:bg-[#2E8B68]/20 selection:text-[#002116]">
       <Header />
 
       {/* Floating Toast Notification */}
@@ -990,7 +1229,7 @@ function ReportsDashboardContent() {
               Community Ground Observations &amp; Registry
             </h1>
             <p className="text-sm text-stone-600 mt-1 max-w-3xl leading-relaxed">
-              Real-time community telemetry tracking hexavalent chromium discoloration, pungent chemical odors, and illegal industrial discharge across Kanpur Nagar and Kanpur Dehat.
+              Real-time community telemetry tracking hexavalent chromium discoloration, pungent chemical odors, and industrial discharge across Kanpur Nagar and Kanpur Dehat.
             </p>
           </div>
 
@@ -1064,122 +1303,127 @@ function ReportsDashboardContent() {
                 }`}
               >
                 <MapIcon className="w-3.5 h-3.5" />
-                <span>Full Map</span>
+                <span>Full GIS Map</span>
               </button>
             </div>
 
-            {/* Dynamic Temporal Horizon Controller */}
-            <div className="flex-1 max-w-xl flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-[#f2f8f5] p-2.5 rounded-xl border border-emerald-200/70">
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className="p-2 rounded-lg bg-[#002116] text-emerald-300 hover:bg-[#12372a] transition-colors cursor-pointer"
-                  title={isPlaying ? 'Pause Playback' : 'Play Historical Progression'}
-                >
-                  {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                </button>
-                <button
-                  onClick={() => setTemporalYear(prev => Math.max(2018, prev - 1))}
-                  className="p-2 rounded-lg bg-white text-stone-700 hover:bg-stone-100 border border-stone-200 transition-colors cursor-pointer"
-                  title="Step Backward (1 Year)"
-                >
-                  <SkipBack className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setTemporalYear(prev => Math.min(2026, prev + 1))}
-                  className="p-2 rounded-lg bg-white text-stone-700 hover:bg-stone-100 border border-stone-200 transition-colors cursor-pointer"
-                  title="Step Forward (1 Year)"
-                >
-                  <SkipForward className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setTemporalYear(2026);
-                    setIsPlaying(false);
-                  }}
-                  className="p-2 rounded-lg bg-white text-stone-700 hover:bg-stone-100 border border-stone-200 transition-colors cursor-pointer"
-                  title="Reset to 2026 Horizon"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Slider Component */}
-              <div className="flex-1 w-full flex items-center gap-3">
-                <input
-                  type="range"
-                  min="2018"
-                  max="2026"
-                  step="1"
-                  value={temporalYear}
-                  onChange={(e) => {
-                    setTemporalYear(parseInt(e.target.value, 10));
-                    setIsPlaying(false);
-                  }}
-                  className="w-full accent-[#002116] cursor-pointer"
-                />
-                <div className="shrink-0 text-right">
-                  <span className="text-xs font-mono font-bold text-[#002116] bg-white px-2.5 py-1 rounded-md border border-emerald-300 shadow-xs block">
-                    {temporalYear} Horizon
-                  </span>
-                </div>
-              </div>
+            {/* Temporal Simulation Player Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTemporalYear(2018)}
+                className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-600 cursor-pointer"
+                title="Reset to 2018 baseline"
+              >
+                <SkipBack className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                  isPlaying ? 'bg-amber-600 text-white shadow-xs' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                }`}
+              >
+                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                <span>{isPlaying ? 'Pause Advection' : 'Play Timeline'}</span>
+              </button>
+              <button
+                onClick={() => setTemporalYear(2026)}
+                className="p-1.5 rounded-lg border border-stone-200 hover:bg-stone-100 text-stone-600 cursor-pointer"
+                title="Fast forward to present (2026)"
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          {/* Search & Filter Toolbar */}
-          <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between pt-3 border-t border-stone-100">
+          {/* Temporal Slider Track */}
+          <div className="pt-2 border-t border-stone-100">
+            <div className="flex justify-between items-center text-xs font-mono text-stone-500 mb-2">
+              <span className="flex items-center gap-1.5 text-stone-700 font-bold">
+                <Clock className="w-3.5 h-3.5 text-[#2E8B68]" />
+                Temporal Advection Horizon:
+              </span>
+              <span className="px-2 py-0.5 bg-[#ddf3e7] text-[#002116] font-bold rounded border border-emerald-300 text-xs">
+                {temporalYear} {temporalYear === 2026 ? '(Current Field Telemetry)' : '(Historical Reconstruction)'}
+              </span>
+            </div>
+
+            <div className="relative">
+              <input
+                type="range"
+                min="2018"
+                max="2026"
+                step="1"
+                value={temporalYear}
+                onChange={e => setTemporalYear(parseInt(e.target.value, 10))}
+                className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#12372a]"
+              />
+              <div className="flex justify-between text-[11px] font-mono text-stone-400 mt-1.5 px-0.5">
+                <span>2018 Baseline</span>
+                <span>2020</span>
+                <span>2022</span>
+                <span>2024</span>
+                <span className="font-bold text-[#002116]">2026 Present</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Filter Bar */}
+        <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-stone-200 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+            <div className="relative flex-grow">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by Report ID, village, water source (e.g. 'HP-016'), or symptom..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-[#2E8B68] focus:bg-white font-mono text-stone-800 transition-colors"
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search observation by ID (CR-2026-001), village, chemical keyword, well ID..."
+                className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-stone-200 bg-stone-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E8B68]/30 focus:border-[#2E8B68] font-mono"
               />
               {searchQuery && (
-                <button 
+                <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-stone-400 hover:text-stone-600 text-xs cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* Select Filters */}
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="p-2 border border-stone-200 bg-stone-50 rounded-xl focus:ring-2 focus:ring-[#2E8B68] text-xs font-mono text-stone-800 outline-none cursor-pointer"
+            {/* Quick Filter Selects */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Village Filter */}
+              <select
+                value={villageFilter}
+                onChange={e => setVillageFilter(e.target.value)}
+                className="px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-xs font-mono font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#2E8B68]/30"
               >
-                <option value="All">All Statuses ({reports.length})</option>
-                <option value="Reported">Reported</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Field Verified">Field Verified</option>
-                <option value="Lab Verified">Lab Verified</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Resolved">Resolved</option>
-              </select>
-
-              <select 
-                value={villageFilter} 
-                onChange={(e) => setVillageFilter(e.target.value)}
-                className="p-2 border border-stone-200 bg-stone-50 rounded-xl focus:ring-2 focus:ring-[#2E8B68] text-xs font-mono text-stone-800 outline-none cursor-pointer"
-              >
-                <option value="All">All Villages</option>
+                <option value="All">All Villages ({villages.length})</option>
                 {villages.map(v => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
+                  <option key={v.id} value={v.id}>
+                    {v.name} ({v.hindiName})
+                  </option>
                 ))}
               </select>
 
-              <select 
-                value={priorityFilter} 
-                onChange={(e) => setPriorityFilter(e.target.value)}
-                className="p-2 border border-stone-200 bg-stone-50 rounded-xl focus:ring-2 focus:ring-[#2E8B68] text-xs font-mono text-stone-800 outline-none cursor-pointer"
+              {/* Status Filter */}
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-xs font-mono font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#2E8B68]/30"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Verified">Verified / Confirmed</option>
+                <option value="Reported">Reported / Under Review</option>
+                <option value="Resolved">Resolved / Decommissioned</option>
+              </select>
+
+              {/* Priority Filter */}
+              <select
+                value={priorityFilter}
+                onChange={e => setPriorityFilter(e.target.value)}
+                className="px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-xs font-mono font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#2E8B68]/30"
               >
                 <option value="All">All Priorities</option>
                 <option value="Critical">Critical</option>
@@ -1188,35 +1432,29 @@ function ReportsDashboardContent() {
                 <option value="Low">Low</option>
               </select>
 
-              {categories.length > 0 && (
-                <select 
-                  value={categoryFilter} 
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="p-2 border border-stone-200 bg-stone-50 rounded-xl focus:ring-2 focus:ring-[#2E8B68] text-xs font-mono text-stone-800 outline-none cursor-pointer"
-                >
-                  <option value="All">All Categories</option>
-                  {categories.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              )}
+              {/* Category Filter */}
+              <select
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+                className="px-3 py-2.5 rounded-xl border border-stone-200 bg-stone-50 text-xs font-mono font-medium text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#2E8B68]/30"
+              >
+                <option value="All">All Categories</option>
+                {categories.map(c => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Active Result Count & Reset Button */}
-          <div className="flex flex-wrap items-center justify-between text-xs font-mono text-stone-500 pt-2 border-t border-stone-100 gap-2">
-            <span>
-              Showing <strong className="text-stone-900">{filteredReports.length}</strong> of <strong className="text-stone-900">{reports.length}</strong> observations
-              {temporalYear < 2026 && (
-                <span className="ml-2 text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold">
-                  (Filtered to ≤ {temporalYear})
-                </span>
-              )}
-            </span>
-
-            <div className="flex items-center gap-3">
-              {(statusFilter !== 'All' || villageFilter !== 'All' || priorityFilter !== 'All' || categoryFilter !== 'All' || searchQuery || temporalYear < 2026) && (
-                <button 
+          {/* Active Filter Chips */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t border-stone-100 text-xs font-mono text-stone-500">
+            <div className="flex items-center gap-2">
+              <span>Showing:</span>
+              <strong className="text-[#002116]">{filteredReports.length}</strong> of {reports.length} observations
+              {(statusFilter !== 'All' || villageFilter !== 'All' || priorityFilter !== 'All' || categoryFilter !== 'All' || searchQuery) && (
+                <button
                   onClick={() => {
                     setStatusFilter('All');
                     setVillageFilter('All');
@@ -1234,600 +1472,726 @@ function ReportsDashboardContent() {
           </div>
         </div>
 
-        {/* Spatial Map & Contextual Info Workspace (Visible in 'split' or 'map' mode) */}
-        {(viewMode === 'split' || viewMode === 'map') && (
-          <div className="mb-8 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
-            {/* Map Header & Toolbar */}
-            <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#2E8B68]" />
-                <span className="font-serif font-bold text-sm text-[#002116]">
-                  Community Environmental GIS Map
-                </span>
-                <span className="text-[11px] font-mono text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
-                  OpenStreetMap Raster Layer · {temporalYear} Historical Telemetry
-                </span>
-              </div>
-
-              {/* Data-Driven Map Layer Legend & Toggles (Single Source of Truth) */}
-              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-                {/* 1. Safe Sources (GREEN) */}
-                <button
-                  onClick={() => setActiveLayers(prev => ({ ...prev, safeSources: !prev.safeSources }))}
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    activeLayers.safeSources ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
-                  }`}
-                  title="Toggle Safe Potable Water Sources"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#15803d]"></span>
-                  <span>Safe Sources ({safeSourcesCount})</span>
-                </button>
-
-                {/* 2. Contaminated Sources (RED) */}
-                <button
-                  onClick={() => setActiveLayers(prev => ({ ...prev, contaminatedSources: !prev.contaminatedSources }))}
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    activeLayers.contaminatedSources ? 'bg-red-100 border-red-300 text-red-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
-                  }`}
-                  title="Toggle Contaminated Wells"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626]"></span>
-                  <span>Contaminated ({contaminatedSourcesCount})</span>
-                </button>
-
-                {/* 3. Cr(VI) Dispersion Plume (PINK/ORANGE) */}
-                <button
-                  onClick={() => setActiveLayers(prev => ({ ...prev, plumes: !prev.plumes }))}
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    activeLayers.plumes ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
-                  }`}
-                  title="Toggle Model-Estimated Cr(VI) Plume Overlays"
-                >
-                  <span className="w-3 h-2 rounded bg-[#fb7185] border border-[#e11d48]"></span>
-                  <span>Cr(VI) Plume (Model-Estimated)</span>
-                </button>
-
-                {/* 4. Citizen Reports (AMBER) */}
-                <button
-                  onClick={() => setActiveLayers(prev => ({ ...prev, reports: !prev.reports }))}
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    activeLayers.reports ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
-                  }`}
-                  title="Toggle Citizen Field Observations"
-                >
-                  <span className="text-amber-600 font-bold">⚠️</span>
-                  <span>Citizen Reports ({filteredReports.length})</span>
-                </button>
-
-                {/* 5. Village Hubs */}
-                <button
-                  onClick={() => setActiveLayers(prev => ({ ...prev, villages: !prev.villages }))}
-                  className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    activeLayers.villages ? 'bg-stone-200 border-stone-400 text-stone-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
-                  }`}
-                  title="Toggle Village Hubs"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#12372a]"></span>
-                  <span>Villages ({villages.length})</span>
-                </button>
-
-                <button
-                  onClick={handleLocateMe}
-                  className="p-1.5 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg text-stone-700 cursor-pointer"
-                  title="Locate Current Position (GPS)"
-                >
-                  <Crosshair className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={handleResetMapView}
-                  className="p-1.5 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg text-stone-700 cursor-pointer"
-                  title="Reset Map Bounds"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* 2-Column GIS Workspace (Map on Left, Contextual Panel on Right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
-              {/* Map Canvas (8 Columns) */}
-              <div className="lg:col-span-8 relative">
-                <div 
-                  ref={mapContainer} 
-                  className={`w-full ${viewMode === 'map' ? 'h-[75vh]' : 'h-96 sm:h-[480px]'} bg-stone-100 relative`}
-                />
-
-                {/* Floating Map Hint */}
-                <div className="absolute top-3 left-3 pointer-events-none bg-white/90 backdrop-blur-xs px-3 py-1 rounded-lg border border-stone-200 text-[10px] font-mono text-stone-600 shadow-sm flex items-center gap-1.5">
-                  <Info className="w-3 h-3 text-[#2E8B68]" />
-                  <span>Click any marker or plume polygon to open telemetry</span>
-                </div>
-
-                {/* Micro banner if temporal year before 2020 */}
-                {temporalYear < 2020 && (
-                  <div className="absolute bottom-2 left-2 right-2 bg-amber-50/95 backdrop-blur-xs p-2 rounded-lg border border-amber-300 text-center text-xs font-mono text-amber-800 shadow-sm">
-                    Pre-surveillance baseline ({temporalYear}): Verified CGWB testing and citizen reporting commenced in January 2020.
-                  </div>
-                )}
-              </div>
-
-              {/* Contextual Entity Information Panel (4 Columns) */}
-              <div className="lg:col-span-4 bg-stone-50 border-t lg:border-t-0 lg:border-l border-stone-200 p-5 flex flex-col justify-between overflow-y-auto max-h-[500px]">
-                {selectedEntity ? (
-                  <div className="space-y-4">
-                    {/* Panel Header */}
-                    <div className="flex items-start justify-between border-b border-stone-200 pb-3">
-                      <div>
-                        {selectedEntity.type === 'report' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
-                              CITIZEN FIELD OBSERVATION
-                            </span>
-                            {getPriorityBadge(selectedEntity.report.priority)}
-                          </div>
-                        )}
-                        {selectedEntity.type === 'safeSource' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-[#15803d]"></span> SAFE DRINKING SOURCE
-                            </span>
-                          </div>
-                        )}
-                        {selectedEntity.type === 'contaminatedSource' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-red-100 text-red-900 px-2 py-0.5 rounded flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3 text-red-600" /> CONTAMINATED WATER POINT
-                            </span>
-                          </div>
-                        )}
-                        {selectedEntity.type === 'plume' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-rose-100 text-rose-900 px-2 py-0.5 rounded border border-rose-300 flex items-center gap-1">
-                              <span className="w-2 h-2 bg-[#fb7185] rounded"></span> MODEL-ESTIMATED Cr(VI) PLUME
-                            </span>
-                          </div>
-                        )}
-                        {selectedEntity.type === 'village' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-[#ddf3e7] text-[#002116] px-2 py-0.5 rounded">
-                              COMMUNITY POPULATION HUB
-                            </span>
-                          </div>
-                        )}
-                        {selectedEntity.type === 'groundwaterPoint' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-900 px-2 py-0.5 rounded">
-                              PIEZOMETRIC MONITORING WELL
-                            </span>
-                          </div>
-                        )}
-                        {selectedEntity.type === 'contaminationSource' && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded">
-                              CONTAMINATION SOURCE
-                            </span>
-                          </div>
-                        )}
-
-                        <h3 className="font-serif font-bold text-lg text-[#002116] leading-snug">
-                          {selectedEntity.type === 'report' ? selectedEntity.report.title || selectedEntity.report.category :
-                           selectedEntity.type === 'safeSource' ? selectedEntity.source.name || selectedEntity.source.id :
-                           selectedEntity.type === 'contaminatedSource' ? selectedEntity.source.name || selectedEntity.source.id :
-                           selectedEntity.type === 'plume' ? selectedEntity.name :
-                           selectedEntity.type === 'village' ? `${selectedEntity.village.name} (${selectedEntity.village.hindiName})` :
-                           selectedEntity.type === 'groundwaterPoint' ? `Piezometer ${selectedEntity.point.id}` :
-                           selectedEntity.source.name}
-                        </h3>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setSelectedEntity(null);
-                          setActiveMarkerId(null);
-                        }}
-                        className="p-1 rounded hover:bg-stone-200 text-stone-400 hover:text-stone-700 cursor-pointer"
-                        title="Close Detail Panel"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Content Details */}
-                    {selectedEntity.type === 'report' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <p className="font-sans text-stone-700 bg-white p-3 rounded-xl border border-stone-200 leading-relaxed italic">
-                          "{selectedEntity.report.description}"
-                        </p>
-
-                        {selectedEntity.report.photoUrl && (
-                          <div 
-                            className="relative h-28 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 cursor-pointer group"
-                            onClick={() => setEnlargedImage(selectedEntity.report.photoUrl || null)}
-                          >
-                            <img 
-                              src={selectedEntity.report.photoUrl} 
-                              alt="Evidence thumbnail" 
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                            <span className="absolute bottom-1.5 left-2 text-[9px] bg-black/80 text-emerald-300 px-1.5 py-0.5 rounded">
-                              {selectedEntity.report.isSynthetic ? 'Illustrative Image — Synthetic' : 'Photographic Evidence'}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-stone-200 text-[11px]">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">RECORD ID</span>
-                            <strong>{selectedEntity.report.id}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">DATE FILED</span>
-                            <strong>{selectedEntity.report.date}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">LOCATION</span>
-                            <span>{selectedEntity.report.locationName || 'Village Cluster'}</span>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">REPORTER</span>
-                            <span>{selectedEntity.report.reporterType || 'Resident'}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 flex items-center justify-between gap-2 border-t border-stone-200">
-                          <button
-                            onClick={() => setFullModalReport(selectedEntity.report)}
-                            className="px-3 py-1.5 bg-[#002116] hover:bg-[#12372a] text-white rounded-lg text-xs font-bold cursor-pointer"
-                          >
-                            View Full Details →
-                          </button>
-                          <button
-                            onClick={() => setReportToDelete(selectedEntity.report)}
-                            className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'safeSource' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
-                          <span className="text-emerald-800 font-bold block mb-1">WHO COMPLIANT POTABLE SOURCE</span>
-                          <p className="text-emerald-700 font-sans text-xs">
-                            Chemical lab analysis confirms total chromium concentration is well below the 0.05 mg/L drinking water threshold.
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-stone-200 text-[11px]">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">SOURCE ID</span>
-                            <strong className="text-stone-900">{selectedEntity.source.id}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">STATUS</span>
-                            <strong className="text-emerald-700">Verified Safe</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">LATEST Cr(VI)</span>
-                            <strong className="text-emerald-800">
-                              {selectedEntity.source.activeMeasurement?.value || 0.002} mg/L
-                            </strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">TEST HORIZON</span>
-                            <span>{temporalYear}</span>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">POPULATION</span>
-                            <span>{selectedEntity.source.populationServed || 250} Served</span>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">PUMP TYPE</span>
-                            <span>{selectedEntity.source.type || 'India Mark II'}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 flex flex-wrap gap-2">
-                          <Link
-                            href={`/water-safety?source=${encodeURIComponent(selectedEntity.source.id)}`}
-                            className="px-3 py-1.5 bg-[#12372a] hover:bg-[#002116] text-white rounded-lg text-xs font-bold"
-                          >
-                            Check Water Safety →
-                          </Link>
-                          <Link
-                            href={`/villages/${selectedEntity.source.villageId}`}
-                            className="px-3 py-1.5 bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 rounded-lg text-xs"
-                          >
-                            View Village Twin
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'contaminatedSource' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-red-50 border border-red-200 p-3 rounded-xl text-red-900">
-                          <span className="font-bold block mb-1">HAZARDOUS: DO NOT USE FOR DRINKING</span>
-                          <p className="font-sans text-xs text-red-800">
-                            Hexavalent chromium concentration exceeds WHO permissible standard. Direct ingestion causes acute gastric cytotoxicity and cellular ulceration.
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-stone-200 text-[11px]">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">SOURCE ID</span>
-                            <strong className="text-red-700">{selectedEntity.source.id}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">CRITICAL Cr(VI)</span>
-                            <strong className="text-red-700 text-sm">
-                              {selectedEntity.source.activeMeasurement?.value || 0.19} mg/L
-                            </strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">WHO MULTIPLIER</span>
-                            <strong className="text-red-800">
-                              {((selectedEntity.source.activeMeasurement?.value || 0.19) / 0.05).toFixed(1)}× Limit
-                            </strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">STATUS</span>
-                            <span className="text-red-600 font-bold">{selectedEntity.source.status.toUpperCase()}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 flex flex-wrap gap-2">
-                          <Link
-                            href={`/water-safety?source=${encodeURIComponent(selectedEntity.source.id)}`}
-                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold"
-                          >
-                            Alternative Safe Sources →
-                          </Link>
-                          <Link
-                            href={`/villages/${selectedEntity.source.villageId}`}
-                            className="px-3 py-1.5 bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 rounded-lg text-xs"
-                          >
-                            Village Digital Twin
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'plume' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-rose-900">
-                          <span className="font-bold block mb-1">MODEL-ESTIMATED DISPERSION ZONE</span>
-                          <p className="font-sans text-xs text-rose-800 leading-relaxed">
-                            {selectedEntity.notes}
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 bg-white p-3 rounded-xl border border-stone-200 text-[11px]">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">ZONE ID</span>
-                            <strong className="text-stone-900">{selectedEntity.zoneId}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">TEMPORAL HORIZON</span>
-                            <strong>{selectedEntity.temporalContext}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">MAX MEASURED Cr</span>
-                            <strong className="text-red-700">{selectedEntity.maxObservedCr}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">CONFIDENCE</span>
-                            <span className="text-emerald-700 font-semibold">{selectedEntity.confidence}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-stone-400 block text-[10px]">NEARBY WATER SOURCES</span>
-                            <span className="text-[#006492] font-semibold">{selectedEntity.nearbyWaterSources}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-stone-400 block text-[10px]">HYDRAULIC TRANSPORT</span>
-                            <span>{selectedEntity.flowDirection}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-1">
-                          <span className="text-[10px] text-stone-400 block italic">
-                            *Predicted spatial boundary computed using 2D solute advection in unconfined micaceous sands.
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'village' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-white p-3 rounded-xl border border-stone-200 space-y-2 text-[11px]">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">POPULATION</span>
-                            <strong className="text-stone-900 text-sm">{selectedEntity.village.population.toLocaleString()} Residents</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">DISTRICT &amp; BLOCK</span>
-                            <span>{selectedEntity.village.district} · {selectedEntity.village.block} Block</span>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">VULNERABILITY LEVEL</span>
-                            <span className="font-bold text-red-700">{selectedEntity.village.riskLevel.toUpperCase()}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-2 flex flex-wrap gap-2">
-                          <Link
-                            href={`/villages/${selectedEntity.village.id}`}
-                            className="px-3 py-1.5 bg-[#002116] hover:bg-[#12372a] text-white rounded-lg text-xs font-bold"
-                          >
-                            Open Digital Twin →
-                          </Link>
-                          <button
-                            onClick={() => setVillageFilter(selectedEntity.village.id)}
-                            className="px-3 py-1.5 bg-white border border-stone-300 text-stone-700 hover:bg-stone-100 rounded-lg text-xs cursor-pointer"
-                          >
-                            Filter Reports
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'groundwaterPoint' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-sky-50 border border-sky-200 p-3 rounded-xl text-sky-900 text-[11px]">
-                          <span className="font-bold block mb-1">AQUIFER SURVEILLANCE WELL</span>
-                          <p className="font-sans text-xs text-sky-800">
-                            Equipped with automated piezometric transducers logging unconfined water table depth and baseline mineralization.
-                          </p>
-                        </div>
-                        <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] grid grid-cols-2 gap-2">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">DEPTH</span>
-                            <strong>{selectedEntity.point.depth ?? (selectedEntity.point as any).depthM ?? 15} Meters</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">DATA STATUS</span>
-                            <span className="font-bold text-emerald-700">{((selectedEntity.point as any).dataStatus || 'VERIFIED').toUpperCase()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedEntity.type === 'contaminationSource' && (
-                      <div className="space-y-3 text-xs font-mono">
-                        <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl text-purple-900 text-[11px]">
-                          <span className="font-bold block mb-1">POINT EMISSION VECTOR</span>
-                          <p className="font-sans text-xs text-purple-800">
-                            {selectedEntity.source.description || `${selectedEntity.source.name} point emission effluent vector with estimated impact radius of ${selectedEntity.source.estimatedImpactRadius || 500}m.`}
-                          </p>
-                        </div>
-                        <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] grid grid-cols-2 gap-2">
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">FACILITY TYPE</span>
-                            <strong>{selectedEntity.source.type.toUpperCase()}</strong>
-                          </div>
-                          <div>
-                            <span className="text-stone-400 block text-[10px]">STATUS</span>
-                            <strong className="text-red-700">{selectedEntity.source.status.toUpperCase()}</strong>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                    <Compass className="w-10 h-10 text-stone-300 mb-2" />
-                    <h4 className="font-serif font-bold text-sm text-stone-700">No Entity Selected</h4>
-                    <p className="text-stone-500 text-xs font-mono mt-1 max-w-xs leading-relaxed">
-                      Click any pin, safe water well, contaminated pump, or Cr(VI) dispersion plume on the map to inspect real-time scientific telemetry.
-                    </p>
-                  </div>
-                )}
-
-                {/* Micro panel footer */}
-                <div className="pt-4 border-t border-stone-200 flex items-center justify-between text-[11px] font-mono text-stone-400">
-                  <span>Sentinel Region: Kanpur</span>
-                  <span>Spatial GIS Engine</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* View Mode: Community Registry (High-Density Table View) */}
-        {(viewMode === 'registry') && (
-          <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-8">
-            <div className="p-4 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
-              <div>
-                <h3 className="font-serif font-bold text-base text-[#002116]">Community Telemetry Registry</h3>
-                <p className="text-xs text-stone-500 font-mono mt-0.5">Filterable tabular registry of field observations and community telemetry</p>
-              </div>
-              <span className="text-xs font-mono bg-white px-2.5 py-1 rounded border border-stone-200 font-bold">
-                {filteredReports.length} Records
+        {/* Spatial Map & Contextual Info Workspace (Continuously Mounted in DOM to prevent map loss) */}
+        <div className={`mb-8 bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden ${viewMode === 'cards' || viewMode === 'registry' ? 'hidden' : 'block'}`}>
+          {/* Map Header & Toolbar */}
+          <div className="p-4 bg-stone-50 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#2E8B68]" />
+              <span className="font-serif font-bold text-sm text-[#002116]">
+                Community Environmental GIS Map
+              </span>
+              <span className="text-[11px] font-mono text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
+                OpenStreetMap GIS Vector · {temporalYear} Telemetry
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200">
-                  <tr>
-                    <th className="p-3.5">Report ID</th>
-                    <th className="p-3.5">Date</th>
-                    <th className="p-3.5">Location / Village</th>
-                    <th className="p-3.5">Category</th>
-                    <th className="p-3.5">Priority</th>
-                    <th className="p-3.5">Status</th>
-                    <th className="p-3.5">Linked Source</th>
-                    <th className="p-3.5">Reporter</th>
-                    <th className="p-3.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-100 text-stone-800">
-                  {filteredReports.map(report => {
-                    const villageObj = villages.find(v => v.id === report.villageId);
-                    return (
-                      <tr key={report.id} className="hover:bg-stone-50/80 transition-colors">
-                        <td className="p-3.5 font-bold text-[#002116]">
+            {/* Data-Driven Map Layer Legend & Toggles (Single Source of Truth) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+              {/* 1. Safe Sources (GREEN) */}
+              <button
+                onClick={() => setActiveLayers(prev => ({ ...prev, safeSources: !prev.safeSources }))}
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeLayers.safeSources ? 'bg-emerald-100 border-emerald-300 text-emerald-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
+                }`}
+                title="Toggle Safe Potable Water Sources"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-[#15803d]"></span>
+                <span>Safe Sources ({safeSourcesCount})</span>
+              </button>
+
+              {/* 2. Contaminated Sources (RED) */}
+              <button
+                onClick={() => setActiveLayers(prev => ({ ...prev, contaminatedSources: !prev.contaminatedSources }))}
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeLayers.contaminatedSources ? 'bg-red-100 border-red-300 text-red-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
+                }`}
+                title="Toggle Contaminated Water Sources"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626]"></span>
+                <span>Contaminated ({contaminatedSourcesCount})</span>
+              </button>
+
+              {/* 3. Cr(VI) Plumes (PINK) */}
+              <button
+                onClick={() => setActiveLayers(prev => ({ ...prev, plumes: !prev.plumes }))}
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeLayers.plumes ? 'bg-rose-100 border-rose-300 text-rose-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
+                }`}
+                title="Toggle Model-Estimated Cr(VI) Plumes"
+              >
+                <span className="w-2.5 h-2.5 bg-[#fb7185] rounded-xs"></span>
+                <span>Cr(VI) Plume (Model-Est)</span>
+              </button>
+
+              {/* 4. Citizen Reports (AMBER ⚠️) */}
+              <button
+                onClick={() => setActiveLayers(prev => ({ ...prev, reports: !prev.reports }))}
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeLayers.reports ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
+                }`}
+                title="Toggle Community Reports"
+              >
+                <span className="text-[10px]">⚠️</span>
+                <span>Reports ({filteredReports.length})</span>
+              </button>
+
+              {/* 5. Village Hubs */}
+              <button
+                onClick={() => setActiveLayers(prev => ({ ...prev, villages: !prev.villages }))}
+                className={`px-2.5 py-1 rounded-lg border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  activeLayers.villages ? 'bg-stone-200 border-stone-400 text-stone-900 font-bold' : 'bg-stone-100 border-stone-200 text-stone-400'
+                }`}
+                title="Toggle Village Hubs"
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-[#12372a]"></span>
+                <span>Villages ({villages.length})</span>
+              </button>
+
+              <button
+                onClick={handleLocateMe}
+                className="p-1.5 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg text-stone-700 cursor-pointer"
+                title="Locate Current Position (GPS)"
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={handleResetMapView}
+                className="p-1.5 bg-white border border-stone-300 hover:bg-stone-100 rounded-lg text-stone-700 cursor-pointer"
+                title="Reset Map Bounds"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2-Column GIS Workspace (Map on Left, Contextual Panel on Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+            {/* Map Canvas (8 Columns) */}
+            <div className="lg:col-span-8 relative">
+              <div 
+                ref={mapContainer} 
+                className={`w-full ${viewMode === 'map' ? 'h-[75vh]' : 'h-96 sm:h-[480px]'} bg-stone-100 relative`}
+              />
+
+              {/* Floating Map Hint */}
+              <div className="absolute top-3 left-3 pointer-events-none bg-white/90 backdrop-blur-xs px-3 py-1 rounded-lg border border-stone-200 text-[10px] font-mono text-stone-600 shadow-sm flex items-center gap-1.5">
+                <Info className="w-3 h-3 text-[#2E8B68]" />
+                <span>Click any marker or plume polygon to open telemetry</span>
+              </div>
+
+              {/* Micro banner if temporal year before 2020 */}
+              {temporalYear < 2020 && (
+                <div className="absolute bottom-2 left-2 right-2 bg-amber-50/95 backdrop-blur-xs p-2 rounded-lg border border-amber-300 text-center text-xs font-mono text-amber-800 shadow-sm">
+                  Pre-surveillance baseline ({temporalYear}): Verified CGWB testing and citizen reporting commenced in January 2020.
+                </div>
+              )}
+            </div>
+
+            {/* Contextual Entity Information Panel (4 Columns) */}
+            <div className="lg:col-span-4 bg-stone-50 border-t lg:border-t-0 lg:border-l border-stone-200 p-5 flex flex-col justify-between overflow-y-auto max-h-[500px]">
+              {selectedEntity ? (
+                <div className="space-y-4">
+                  {/* Panel Header */}
+                  <div className="flex items-start justify-between border-b border-stone-200 pb-3">
+                    <div>
+                      {selectedEntity.type === 'report' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-900 px-2 py-0.5 rounded">
+                            CITIZEN FIELD OBSERVATION
+                          </span>
+                          {getPriorityBadge(selectedEntity.report.priority)}
+                        </div>
+                      )}
+                      {selectedEntity.type === 'safeSource' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-[#15803d]"></span> SAFE DRINKING SOURCE
+                          </span>
+                        </div>
+                      )}
+                      {selectedEntity.type === 'contaminatedSource' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-red-100 text-red-900 px-2 py-0.5 rounded flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-red-600" /> CONTAMINATED WATER POINT
+                          </span>
+                        </div>
+                      )}
+                      {selectedEntity.type === 'plume' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-rose-100 text-rose-900 px-2 py-0.5 rounded border border-rose-300 flex items-center gap-1">
+                            <span className="w-2 h-2 bg-[#fb7185] rounded"></span> MODEL-ESTIMATED Cr(VI) PLUME
+                          </span>
+                        </div>
+                      )}
+                      {selectedEntity.type === 'village' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-[#ddf3e7] text-[#002116] px-2 py-0.5 rounded">
+                            COMMUNITY POPULATION HUB
+                          </span>
+                        </div>
+                      )}
+                      {selectedEntity.type === 'groundwaterPoint' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-900 px-2 py-0.5 rounded">
+                            PIEZOMETRIC MONITORING WELL
+                          </span>
+                        </div>
+                      )}
+                      {selectedEntity.type === 'contaminationSource' && (
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-[10px] font-mono font-bold bg-purple-100 text-purple-900 px-2 py-0.5 rounded">
+                            CONTAMINATION SOURCE
+                          </span>
+                        </div>
+                      )}
+
+                      <h3 className="font-serif font-bold text-lg text-[#002116] leading-snug">
+                        {selectedEntity.type === 'report' ? selectedEntity.report.title || selectedEntity.report.category :
+                         selectedEntity.type === 'safeSource' ? selectedEntity.source.name || selectedEntity.source.id :
+                         selectedEntity.type === 'contaminatedSource' ? selectedEntity.source.name || selectedEntity.source.id :
+                         selectedEntity.type === 'plume' ? selectedEntity.name :
+                         selectedEntity.type === 'village' ? `${selectedEntity.village.name} (${selectedEntity.village.hindiName})` :
+                         selectedEntity.type === 'groundwaterPoint' ? `Piezometer ${selectedEntity.point.id}` :
+                         selectedEntity.source.name}
+                      </h3>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedEntity(null);
+                        setActiveMarkerId(null);
+                      }}
+                      className="p-1 rounded hover:bg-stone-200 text-stone-400 hover:text-stone-700 cursor-pointer"
+                      title="Close Detail Panel"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Content Details */}
+                  {selectedEntity.type === 'report' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <p className="font-sans text-stone-700 bg-white p-3 rounded-xl border border-stone-200 leading-relaxed italic">
+                        "{selectedEntity.report.description}"
+                      </p>
+
+                      {selectedEntity.report.photoUrl && (
+                        <div 
+                          className="relative h-28 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 cursor-pointer group"
+                          onClick={() => setEnlargedImage(selectedEntity.report.photoUrl || null)}
+                        >
+                          <img 
+                            src={selectedEntity.report.photoUrl} 
+                            alt="Evidence thumbnail" 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[11px] text-white font-mono flex items-center gap-1">
+                              <Maximize2 className="w-3.5 h-3.5" /> Enlarge
+                            </span>
+                          </div>
+                          <span className={`absolute bottom-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded text-white ${
+                            selectedEntity.report.isSynthetic ? 'bg-amber-600/90' : 'bg-[#12372a]/90'
+                          }`}>
+                            {selectedEntity.report.isSynthetic ? 'Illustrative — Synthetic Image' : 'Photographic Evidence'}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">REPORT ID:</span>
+                          <span className="font-bold text-[#002116]">{selectedEntity.report.id}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">LOCATION:</span>
+                          <span className="font-semibold text-stone-700">{selectedEntity.report.locationName || 'Field Incident'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">DATE:</span>
+                          <span>{selectedEntity.report.date}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">REPORTER:</span>
+                          <span>{selectedEntity.report.reporterType || 'Resident'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">VERIFICATION:</span>
+                          <span className="text-emerald-700 font-bold">{selectedEntity.report.status}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => setFullModalReport(selectedEntity.report)}
+                          className="flex-1 py-2 bg-[#12372a] hover:bg-[#002116] text-white font-bold rounded-lg text-center cursor-pointer transition-colors"
+                        >
+                          View Full Dossier
+                        </button>
+                        <button
+                          onClick={() => setReportToDelete(selectedEntity.report)}
+                          className="p-2 border border-red-200 hover:bg-red-50 text-red-600 rounded-lg cursor-pointer transition-colors"
+                          title="Delete this observation"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'safeSource' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-emerald-950 text-[11px]">
+                        <span className="font-bold block mb-1">VERIFIED SAFE POTABLE DRINKING WATER</span>
+                        <p className="font-sans text-xs text-emerald-900">
+                          Total Hexavalent Chromium tests consistently below WHO permissible limit (0.05 mg/L). Certified suitable for drinking and infant food preparation.
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">SOURCE ID:</span>
+                          <strong className="text-emerald-800">{selectedEntity.source.id}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">SOURCE TYPE:</span>
+                          <span>{selectedEntity.source.type.toUpperCase().replace('_', ' ')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">POPULATION SERVED:</span>
+                          <span>{selectedEntity.source.populationServed} Residents</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">STATUS:</span>
+                          <span className="text-emerald-700 font-bold">POTABLE (SAFE)</span>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/water-safety?sourceId=${selectedEntity.source.id}`}
+                        className="block w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-lg text-center cursor-pointer transition-colors"
+                      >
+                        Inspect Water Safety Certificate →
+                      </Link>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'contaminatedSource' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-red-50 border border-red-200 p-3 rounded-xl text-red-950 text-[11px]">
+                        <span className="font-bold block mb-1">HEALTH HAZARD: DO NOT CONSUME</span>
+                        <p className="font-sans text-xs text-red-900">
+                          Source draws from shallow unconfined aquifer impacted by tannery leachate plume. Heavy metals exceed permissible safety standards.
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">SOURCE ID:</span>
+                          <strong className="text-red-700">{selectedEntity.source.id}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">TYPE:</span>
+                          <span>{selectedEntity.source.type.toUpperCase().replace('_', ' ')}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">STATUS:</span>
+                          <strong className="text-red-700">{selectedEntity.source.status.toUpperCase()}</strong>
+                        </div>
+                        {selectedEntity.source.alternativeSourceId && (
+                          <div className="flex justify-between text-emerald-700 font-bold">
+                            <span>SAFE ALTERNATIVE:</span>
+                            <span>{selectedEntity.source.alternativeSourceId}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <Link
+                        href={`/water-safety?sourceId=${selectedEntity.source.id}`}
+                        className="block w-full py-2 bg-red-700 hover:bg-red-800 text-white font-bold rounded-lg text-center cursor-pointer transition-colors"
+                      >
+                        View Contamination Profile →
+                      </Link>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'plume' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl text-rose-950 text-[11px]">
+                        <div className="flex items-center gap-1.5 font-bold mb-1 text-rose-900">
+                          <Sparkles className="w-3.5 h-3.5 text-rose-600" />
+                          <span>MODEL-ESTIMATED DISPERSION ENVELOPE</span>
+                        </div>
+                        <p className="font-sans text-xs text-rose-800">
+                          Calibrated 2D subsurface solute transport advection model simulating hexavalent chromium migration along the regional hydraulic gradient.
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">PLUME ID:</span>
+                          <strong className="text-[#002116]">{selectedEntity.zoneId}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">ASSOCIATED CLUSTER:</span>
+                          <span>{selectedEntity.associatedVillage}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">ESTIMATED AREA:</span>
+                          <strong className="text-rose-700">{selectedEntity.plumeAreaKm2} km²</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">MAX OBSERVED Cr(VI):</span>
+                          <strong className="text-red-700">{selectedEntity.maxObservedCr}</strong>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">FLOW VECTOR:</span>
+                          <span>{selectedEntity.flowDirection}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-stone-400">HYDRAULIC COND:</span>
+                          <span>{selectedEntity.hydraulicConductivity}</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-stone-100 rounded-xl text-[11px] text-stone-600">
+                        <span className="font-bold block mb-1 text-stone-800">NEARBY THREATENED SOURCES:</span>
+                        <span>{selectedEntity.nearbyWaterSources}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'village' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-[#ddf3e7] p-3 rounded-xl border border-emerald-300 text-[11px]">
+                        <span className="font-bold text-[#002116] block mb-1">{selectedEntity.village.name} ({selectedEntity.village.hindiName})</span>
+                        <p className="font-sans text-xs text-stone-700">
+                          District: {selectedEntity.village.district} · Population: {selectedEntity.village.population.toLocaleString()} residents
+                        </p>
+                      </div>
+
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">RISK TIER</span>
+                          <strong className="text-red-700 uppercase">{selectedEntity.village.riskLevel}</strong>
+                        </div>
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">WATER DEPTH</span>
+                          <strong>{selectedEntity.village.groundwaterDepth}m</strong>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/villages/${selectedEntity.village.id}`}
+                        className="block w-full py-2 bg-[#12372a] hover:bg-[#002116] text-white font-bold rounded-lg text-center cursor-pointer transition-colors"
+                      >
+                        Open Village Hydrogeological Profile →
+                      </Link>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'groundwaterPoint' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-sky-50 border border-sky-200 p-3 rounded-xl text-sky-900 text-[11px]">
+                        <span className="font-bold block mb-1">AQUIFER SURVEILLANCE WELL</span>
+                        <p className="font-sans text-xs text-sky-800">
+                          Equipped with automated piezometric transducers logging unconfined water table depth and baseline mineralization.
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">DEPTH</span>
+                          <strong>{selectedEntity.point.depth ?? (selectedEntity.point as any).depthM ?? 15} Meters</strong>
+                        </div>
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">DATA STATUS</span>
+                          <span className="font-bold text-emerald-700">{((selectedEntity.point as any).dataStatus || 'VERIFIED').toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedEntity.type === 'contaminationSource' && (
+                    <div className="space-y-3 text-xs font-mono">
+                      <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl text-purple-900 text-[11px]">
+                        <span className="font-bold block mb-1">POINT EMISSION VECTOR</span>
+                        <p className="font-sans text-xs text-purple-800">
+                          {selectedEntity.source.description || `${selectedEntity.source.name} point emission effluent vector with estimated impact radius of ${selectedEntity.source.estimatedImpactRadius || 500}m.`}
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-stone-200 text-[11px] grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">FACILITY TYPE</span>
+                          <strong>{selectedEntity.source.type.toUpperCase()}</strong>
+                        </div>
+                        <div>
+                          <span className="text-stone-400 block text-[10px]">STATUS</span>
+                          <strong className="text-red-700">{selectedEntity.source.status.toUpperCase()}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                  <Compass className="w-10 h-10 text-stone-300 mb-2" />
+                  <span className="text-xs font-mono font-bold text-stone-600 mb-1">
+                    Spatial Telemetry Inspector
+                  </span>
+                  <p className="text-[11px] font-sans text-stone-400 max-w-xs leading-relaxed">
+                    Click any safe drinking source, contaminated borewell, pink plume polygon, or citizen observation on the map to load real-time telemetry.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Ground Observations Cards View (Visible in 'split' or 'cards' mode) */}
+        {(viewMode === 'split' || viewMode === 'cards') && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Grid className="w-4 h-4 text-[#2E8B68]" />
+                <h2 className="font-serif font-bold text-lg text-[#002116]">
+                  Citizen Ground Telemetry Feed
+                </h2>
+                <span className="text-xs font-mono text-stone-500 bg-white px-2.5 py-0.5 rounded-full border border-stone-200">
+                  {filteredReports.length} Reports
+                </span>
+              </div>
+            </div>
+
+            {filteredReports.length === 0 ? (
+              <div className="bg-white p-8 rounded-2xl border border-stone-200 text-center space-y-3">
+                <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
+                <h3 className="font-serif font-bold text-[#002116]">No matching field observations</h3>
+                <p className="text-xs font-mono text-stone-500 max-w-md mx-auto">
+                  No citizen reports match the currently applied filters or temporal horizon ({temporalYear}).
+                </p>
+                <button
+                  onClick={() => {
+                    setStatusFilter('All');
+                    setVillageFilter('All');
+                    setPriorityFilter('All');
+                    setCategoryFilter('All');
+                    setSearchQuery('');
+                    setTemporalYear(2026);
+                  }}
+                  className="px-4 py-2 bg-[#12372a] text-white text-xs font-mono font-bold rounded-xl cursor-pointer hover:bg-[#002116]"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredReports.map(report => {
+                  const village = villages.find(v => v.id === report.villageId);
+                  const isSelected = activeMarkerId === report.id || (selectedEntity?.type === 'report' && selectedEntity.report.id === report.id);
+
+                  return (
+                    <div
+                      key={report.id}
+                      className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between group ${
+                        isSelected 
+                          ? 'border-amber-500 ring-2 ring-amber-400/40 shadow-lg' 
+                          : 'border-stone-200 hover:border-stone-300 hover:shadow-md'
+                      }`}
+                    >
+                      {/* Card Image Banner */}
+                      <div className="relative h-44 w-full bg-stone-900 overflow-hidden">
+                        {report.photoUrl ? (
+                          <img
+                            src={report.photoUrl}
+                            alt={report.title || report.category}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-stone-800 text-stone-400">
+                            <ImageIcon className="w-8 h-8 opacity-40 mb-1" />
+                            <span className="text-[10px] font-mono">No Image Attached</span>
+                          </div>
+                        )}
+
+                        {/* Image Classification Tag */}
+                        <span className={`absolute top-2.5 left-2.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded shadow-sm text-white ${
+                          report.isSynthetic ? 'bg-amber-600/90' : 'bg-[#12372a]/90'
+                        }`}>
+                          {report.isSynthetic ? 'Illustrative — Synthetic Image' : 'Photographic Evidence'}
+                        </span>
+
+                        {/* Priority Badge */}
+                        <div className="absolute top-2.5 right-2.5">
+                          {getPriorityBadge(report.priority)}
+                        </div>
+
+                        {/* Location Tag on bottom of image */}
+                        <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between text-[11px] font-mono text-white/95 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-lg">
+                          <span className="truncate flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                            {report.locationName || village?.name || 'Kanpur Region'}
+                          </span>
+                          <span className="text-stone-300 text-[10px]">{report.date}</span>
+                        </div>
+                      </div>
+
+                      {/* Card Body */}
+                      <div className="p-4 sm:p-5 flex-grow flex flex-col justify-between space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between text-xs font-mono text-stone-400 mb-1">
+                            <span>{report.id}</span>
+                            <span>{village?.name || 'Village'}</span>
+                          </div>
+
+                          <h3 className="font-serif font-bold text-base text-[#002116] leading-snug group-hover:text-[#2E8B68] transition-colors line-clamp-2">
+                            {report.title || report.category}
+                          </h3>
+
+                          <p className="text-xs text-stone-600 mt-2 line-clamp-3 leading-relaxed font-sans">
+                            {report.description}
+                          </p>
+                        </div>
+
+                        {/* Metadata Footer */}
+                        <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs font-mono text-stone-500">
+                          <span>Reporter: {report.reporterType || 'Resident'}</span>
+                          {getStatusBadge(report.status)}
+                        </div>
+                      </div>
+
+                      {/* Visible Card Actions Row including Direct DELETE Button */}
+                      <div className="px-4 py-3 bg-stone-50 border-t border-stone-200 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => setFullModalReport(report)}
-                            className="hover:text-[#2E8B68] hover:underline cursor-pointer"
+                            className="px-3 py-1.5 bg-white border border-stone-200 hover:bg-stone-100 rounded-lg text-xs font-mono font-bold text-stone-800 transition-colors cursor-pointer flex items-center gap-1"
                           >
-                            {report.id}
+                            <span>Details</span>
+                            <ArrowRight className="w-3 h-3 text-stone-400" />
                           </button>
+
+                          <button
+                            onClick={() => handleLocateOnMap(report)}
+                            className="px-3 py-1.5 bg-[#12372a] hover:bg-[#002116] text-white rounded-lg text-xs font-mono font-bold transition-colors cursor-pointer flex items-center gap-1"
+                            title="Highlight on Community GIS Map"
+                          >
+                            <MapPin className="w-3 h-3 text-emerald-300" />
+                            <span>View on Map</span>
+                          </button>
+                        </div>
+
+                        {/* Prominently visible Direct Delete Action */}
+                        <button
+                          onClick={() => setReportToDelete(report)}
+                          className="px-2.5 py-1.5 border border-red-200 hover:border-red-400 bg-white hover:bg-red-50 text-red-600 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center gap-1"
+                          title="Delete this observation record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Community Registry Table View (Visible in 'split' or 'registry' mode) */}
+        {(viewMode === 'split' || viewMode === 'registry') && (
+          <div className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden mb-8">
+            <div className="p-4 sm:p-5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-3 bg-stone-50">
+              <div className="flex items-center gap-2">
+                <TableIcon className="w-4 h-4 text-[#2E8B68]" />
+                <h2 className="font-serif font-bold text-base sm:text-lg text-[#002116]">
+                  Synchronized Community Registry Records
+                </h2>
+                <span className="text-xs font-mono text-stone-500 bg-white px-2 py-0.5 rounded border border-stone-200">
+                  {filteredReports.length} Synchronized Records
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs font-mono">
+                <thead>
+                  <tr className="bg-stone-100 border-b border-stone-200 text-stone-600 font-bold uppercase text-[10px] tracking-wider">
+                    <th className="py-3 px-4">Observation ID</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4">Priority</th>
+                    <th className="py-3 px-4">Category &amp; Title</th>
+                    <th className="py-3 px-4">Village / Location</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Evidence</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-200 text-stone-700">
+                  {filteredReports.map(report => {
+                    const village = villages.find(v => v.id === report.villageId);
+                    const isSelected = activeMarkerId === report.id || (selectedEntity?.type === 'report' && selectedEntity.report.id === report.id);
+
+                    return (
+                      <tr 
+                        key={report.id} 
+                        className={`hover:bg-amber-50/40 transition-colors ${isSelected ? 'bg-amber-100/50 font-bold' : ''}`}
+                      >
+                        <td className="py-3 px-4 font-bold text-[#002116]">
+                          {report.id}
                         </td>
-                        <td className="p-3.5 text-stone-500 whitespace-nowrap">
+                        <td className="py-3 px-4 text-stone-500 whitespace-nowrap">
                           {report.date}
                         </td>
-                        <td className="p-3.5">
-                          <span className="font-semibold text-stone-900 block">{villageObj?.name || 'Kanpur Cluster'}</span>
-                          <span className="text-stone-400 text-[10px] block">{report.locationName || 'Ward Area'}</span>
-                        </td>
-                        <td className="p-3.5 text-stone-700">
-                          {report.category}
-                        </td>
-                        <td className="p-3.5">
+                        <td className="py-3 px-4">
                           {getPriorityBadge(report.priority)}
                         </td>
-                        <td className="p-3.5">
+                        <td className="py-3 px-4 max-w-xs">
+                          <div className="font-bold text-[#002116] truncate">{report.title || report.category}</div>
+                          <div className="text-[11px] text-stone-500 truncate font-sans">{report.description}</div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div>{village?.name || 'Kanpur Region'}</div>
+                          <div className="text-[10px] text-stone-400 truncate">{report.locationName || 'Field Point'}</div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
                           {getStatusBadge(report.status)}
                         </td>
-                        <td className="p-3.5">
-                          {report.waterSourceId ? (
-                            <Link 
-                              href={`/water-safety?source=${encodeURIComponent(report.waterSourceId)}`}
-                              className="text-[#006492] font-bold hover:underline"
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          {report.photoUrl ? (
+                            <button
+                              onClick={() => setEnlargedImage(report.photoUrl || null)}
+                              className="text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                              {report.waterSourceId}
-                            </Link>
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>{report.isSynthetic ? 'Synthetic' : 'Photo'}</span>
+                            </button>
                           ) : (
-                            <span className="text-stone-400">—</span>
+                            <span className="text-stone-400">None</span>
                           )}
                         </td>
-                        <td className="p-3.5 text-stone-500">
-                          {report.reporterType || 'Resident'}
-                        </td>
-                        <td className="p-3.5 text-right whitespace-nowrap">
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleLocateOnMap(report)}
-                              className="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg transition-colors cursor-pointer"
-                              title="Locate on Map"
+                              className="p-1.5 hover:bg-stone-200 rounded text-stone-700 cursor-pointer"
+                              title="View on Map"
                             >
-                              <MapPin className="w-3.5 h-3.5 text-[#2E8B68]" />
+                              <MapPin className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setFullModalReport(report)}
-                              className="p-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-lg transition-colors cursor-pointer"
-                              title="Inspect Details"
+                              className="p-1.5 hover:bg-stone-200 rounded text-stone-700 cursor-pointer"
+                              title="Full Dossier"
                             >
-                              <Eye className="w-3.5 h-3.5 text-sky-700" />
+                              <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => setReportToDelete(report)}
-                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 hover:bg-red-100 rounded text-red-600 cursor-pointer"
                               title="Delete Observation"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1842,469 +2206,204 @@ function ReportsDashboardContent() {
             </div>
           </div>
         )}
+      </main>
 
-        {/* View Mode: Ground Cards Grid (Visible in 'split' or 'cards' mode) */}
-        {(viewMode === 'split' || viewMode === 'cards') && (
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-serif font-bold text-xl text-[#002116]">
-                Community Ground Observations
-              </h2>
-              <span className="text-xs font-mono text-stone-500">
-                {filteredReports.length} documented observations
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredReports.map(report => {
-                const villageObj = villages.find(v => v.id === report.villageId);
-                const villageName = villageObj?.name || report.locationName || 'Rural Cluster';
-                const photoSrc = report.photoUrl || report.photoDataUrl;
-                const isSelected = activeMarkerId === report.id || (selectedEntity?.type === 'report' && selectedEntity.report.id === report.id);
-
-                return (
-                  <div 
-                    key={report.id} 
-                    className={`bg-white rounded-2xl shadow-sm border ${
-                      isSelected ? 'border-[#2E8B68] ring-2 ring-[#2E8B68]/30 shadow-md' : 'border-stone-200'
-                    } overflow-hidden hover:shadow-md hover:border-[#2E8B68]/60 transition-all flex flex-col justify-between`}
-                  >
-                    <div>
-                      {/* Photo Banner with Authentic Semantic Image and Fallback */}
-                      {photoSrc ? (
-                        <div className="relative h-44 w-full overflow-hidden bg-stone-900 group">
-                          <img 
-                            src={photoSrc} 
-                            alt={report.title || report.category} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
-                            onClick={() => setEnlargedImage(photoSrc)}
-                            onError={(e) => {
-                              // Elegant fallback if network fails
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-                          
-                          {/* Provenance Badge (Phase 29: Differentiate Synthetic from Real Field Evidence) */}
-                          <span className={`absolute bottom-2.5 left-3 text-[10px] font-mono px-2.5 py-0.5 rounded flex items-center gap-1.5 border ${
-                            report.isSynthetic ? 'bg-indigo-950/90 text-indigo-300 border-indigo-500/40' : 'bg-black/80 text-emerald-300 border-emerald-500/30'
-                          }`}>
-                            {report.isSynthetic ? (
-                              <>
-                                <Sparkles className="w-3 h-3 text-indigo-400" /> Illustrative Image — Synthetic
-                              </>
-                            ) : (
-                              <>
-                                <ImageIcon className="w-3 h-3 text-emerald-400" /> Photographic Evidence
-                              </>
-                            )}
-                          </span>
-
-                          <button
-                            onClick={() => setEnlargedImage(photoSrc)}
-                            className="absolute top-2.5 right-3 p-1.5 bg-black/60 hover:bg-black/90 text-white rounded-lg transition-colors cursor-pointer"
-                            title="Expand Image Lightbox"
-                          >
-                            <Maximize2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="h-20 bg-stone-100 border-b border-stone-200 px-5 flex items-center justify-between text-xs font-mono text-stone-500">
-                          <span className="flex items-center gap-1.5 font-semibold text-stone-700">
-                            <Droplet className="w-4 h-4 text-[#2E8B68]" /> Field Incident Record
-                          </span>
-                          <span className="text-[10px] bg-stone-200 px-2 py-0.5 rounded text-stone-600">Observation Filed</span>
-                        </div>
-                      )}
-
-                      <div className="p-5">
-                        <div className="flex justify-between items-start mb-2.5 gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-mono font-bold text-stone-800 bg-stone-100 px-2 py-0.5 rounded">
-                              {report.id}
-                            </span>
-                            {getPriorityBadge(report.priority)}
-                          </div>
-                          {getStatusBadge(report.status)}
-                        </div>
-                        
-                        <h3 className="text-base font-serif font-bold text-[#002116] mb-1.5 leading-snug">
-                          {report.title || report.category}
-                        </h3>
-                        
-                        <p className="text-stone-600 text-xs mb-4 line-clamp-2 leading-relaxed">
-                          "{report.description}"
-                        </p>
-
-                        <div className="space-y-1.5 text-xs font-mono text-stone-500 pt-3 border-t border-stone-100">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-[#2E8B68]" />
-                              <Link 
-                                href={`/villages/${report.villageId}`}
-                                className="font-semibold text-stone-800 hover:text-[#006492] hover:underline truncate"
-                                title="Open Village Digital Twin"
-                              >
-                                {villageName}
-                              </Link>
-                            </div>
-                            {report.waterSourceId && (
-                              <Link
-                                href={`/water-safety?source=${encodeURIComponent(report.waterSourceId)}`}
-                                className="text-[11px] bg-sky-50 text-[#006492] px-1.5 py-0.5 rounded font-bold hover:underline"
-                                title="Check Water Safety"
-                              >
-                                {report.waterSourceId}
-                              </Link>
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between text-[11px] text-stone-400">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-stone-400" />
-                              {new Date(report.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                            </span>
-                            <span>{report.reporterType || 'Resident'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Action Footer with Visible DELETE Button (Phase 18 & 19) */}
-                    <div className="bg-[#f2f8f5] px-4 py-3 border-t border-stone-100 flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => handleLocateOnMap(report)}
-                        className="text-xs font-mono font-bold text-[#2E8B68] hover:text-[#002116] flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Locate & Highlight on Map"
-                      >
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>Locate</span>
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setFullModalReport(report)}
-                          className="text-xs font-mono font-bold text-[#006492] hover:text-[#002116] flex items-center gap-1 transition-colors cursor-pointer"
-                        >
-                          View Details →
-                        </button>
-
-                        <button
-                          onClick={() => setReportToDelete(report)}
-                          className="px-2.5 py-1 text-red-600 hover:text-red-800 hover:bg-red-100 bg-red-50 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Delete Community Observation"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {filteredReports.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-stone-300 my-8">
-            <AlertCircle className="w-12 h-12 text-stone-400 mx-auto mb-3" />
-            <p className="text-stone-800 font-serif text-xl font-bold">No community observations match this criteria</p>
-            <p className="text-stone-500 text-xs font-mono mt-1 max-w-md mx-auto">
-              Try adjusting your search terms, loosening status filters, or advancing the temporal horizon slider to 2026.
-            </p>
-            <button 
-              onClick={() => {
-                setStatusFilter('All');
-                setVillageFilter('All');
-                setPriorityFilter('All');
-                setCategoryFilter('All');
-                setSearchQuery('');
-                setTemporalYear(2026);
-              }}
-              className="mt-4 px-5 py-2.5 bg-[#002116] hover:bg-[#12372a] text-white text-xs font-mono font-bold rounded-xl cursor-pointer"
-            >
-              Reset All Filters &amp; Horizon
-            </button>
-          </div>
-        )}
-
-        {/* Full Report Inspection Modal */}
-        {fullModalReport && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-stone-200 shadow-2xl">
-              <div className="p-6 border-b border-stone-200 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-xs font-mono font-bold bg-stone-100 text-stone-700 px-2.5 py-0.5 rounded">
-                      {fullModalReport.id}
-                    </span>
-                    {getPriorityBadge(fullModalReport.priority)}
-                    {getStatusBadge(fullModalReport.status)}
-                  </div>
-                  <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#002116]">
-                    {fullModalReport.title || fullModalReport.category}
-                  </h2>
-                </div>
-                <button 
-                  onClick={() => setFullModalReport(null)}
-                  className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-500 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+      {/* Accessible Confirmation Modal for Deleting Community Record */}
+      {reportToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center gap-3 text-red-600 border-b border-stone-100 pb-3">
+              <div className="p-2 bg-red-100 rounded-xl">
+                <Trash2 className="w-5 h-5" />
               </div>
-
-              <div className="p-6 space-y-6 text-sm">
-                <div>
-                  <h4 className="text-xs font-mono font-bold uppercase text-stone-400 mb-1.5">Field Narrative</h4>
-                  <p className="text-stone-800 bg-stone-50 p-4 rounded-xl leading-relaxed border border-stone-200 font-sans text-sm">
-                    "{fullModalReport.description}"
-                  </p>
-                </div>
-
-                {/* Render Photographic Evidence */}
-                {(fullModalReport.photoUrl || fullModalReport.photoDataUrl) && (
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-xs font-mono font-bold uppercase text-stone-400 flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                        {fullModalReport.isSynthetic ? 'Illustrative Image — Synthetic' : 'Photographic Evidence'}
-                      </h4>
-                      <button
-                        onClick={() => setEnlargedImage(fullModalReport.photoUrl || fullModalReport.photoDataUrl || null)}
-                        className="text-xs font-mono text-[#006492] hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        <Maximize2 className="w-3.5 h-3.5" /> Full Lightbox View
-                      </button>
-                    </div>
-                    <div 
-                      onClick={() => setEnlargedImage(fullModalReport.photoUrl || fullModalReport.photoDataUrl || null)}
-                      className="rounded-xl overflow-hidden border border-stone-200 max-h-80 bg-black flex items-center justify-center cursor-zoom-in group relative"
-                    >
-                      <img 
-                        src={fullModalReport.photoUrl || fullModalReport.photoDataUrl} 
-                        alt="Submitted evidence" 
-                        className="max-h-80 object-contain w-full group-hover:scale-102 transition-transform duration-300"
-                      />
-                      <span className="absolute bottom-2 right-2 text-[10px] font-mono bg-black/70 text-white px-2 py-1 rounded">
-                        Click to enlarge
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Geography & Location Card */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono bg-[#f2f8f5] p-4 rounded-xl border border-stone-200">
-                  <div>
-                    <span className="text-stone-500 block text-[10px]">VILLAGE / COMMUNITY</span>
-                    <Link
-                      href={`/villages/${fullModalReport.villageId}`}
-                      className="text-stone-900 text-sm font-bold hover:text-[#006492] flex items-center gap-1"
-                    >
-                      {villages.find(v => v.id === fullModalReport.villageId)?.name || 'Rural Cluster'}
-                      <ExternalLink className="w-3 h-3 text-stone-400" />
-                    </Link>
-                    <span className="text-stone-500 text-[11px] block mt-0.5">
-                      {fullModalReport.locationName || 'Local Panchayat Ward'}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-stone-500 block text-[10px]">COORDINATES</span>
-                    <strong className="text-stone-900 text-sm">
-                      {(typeof (fullModalReport.coordinates as any)?.lat === 'number' ? (fullModalReport.coordinates as any).lat : (fullModalReport.coordinates as any)?.[1] ?? 26.4481).toFixed(4)}°N, {(typeof (fullModalReport.coordinates as any)?.lon === 'number' ? (fullModalReport.coordinates as any).lon : (fullModalReport.coordinates as any)?.[0] ?? 80.0102).toFixed(4)}°E
-                    </strong>
-                    {fullModalReport.waterSourceId && (
-                      <Link
-                        href={`/water-safety?source=${encodeURIComponent(fullModalReport.waterSourceId)}`}
-                        className="text-stone-600 text-[11px] block mt-0.5 hover:underline"
-                      >
-                        Linked Source: <strong className="text-[#006492]">{fullModalReport.waterSourceId}</strong>
-                      </Link>
-                    )}
-                  </div>
-
-                  <div>
-                    <span className="text-stone-500 block text-[10px]">SUBMISSION DATE</span>
-                    <strong className="text-stone-900">
-                      {new Date(fullModalReport.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span className="text-stone-500 block text-[10px]">VERIFICATION PROGRESS</span>
-                    <strong className="text-emerald-800 font-bold">
-                      {fullModalReport.verificationStatus || 'En route to District Team'}
-                    </strong>
-                  </div>
-
-                  {fullModalReport.reporterType && (
-                    <div>
-                      <span className="text-stone-500 block text-[10px]">REPORTER PERSONA</span>
-                      <strong className="text-stone-900">
-                        {fullModalReport.reporterName || 'Anonymized'} ({fullModalReport.reporterType})
-                      </strong>
-                    </div>
-                  )}
-
-                  {fullModalReport.reporterPhone && (
-                    <div>
-                      <span className="text-stone-500 block text-[10px]">CONTACT PHONE</span>
-                      <strong className="text-stone-900">{fullModalReport.reporterPhone}</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between gap-3">
-                <button
-                  onClick={() => {
-                    setReportToDelete(fullModalReport);
-                  }}
-                  className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete Observation
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      handleLocateOnMap(fullModalReport);
-                      setFullModalReport(null);
-                    }}
-                    className="px-4 py-2 bg-white border border-stone-300 text-stone-800 rounded-xl text-xs font-mono font-bold hover:bg-stone-100 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-[#2E8B68]" />
-                    Locate on Spatial Map
-                  </button>
-
-                  <button
-                    onClick={() => setFullModalReport(null)}
-                    className="px-4 py-2 bg-[#002116] text-white rounded-xl text-xs font-mono font-bold cursor-pointer hover:bg-[#12372a]"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Confirmation Dialog (Phase 20 & 21: Persistent Soft Deletion) */}
-        {reportToDelete && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-60 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 border border-stone-200 shadow-2xl space-y-4">
-              <div className="flex items-start gap-3 text-red-600">
-                <div className="p-2.5 bg-red-100 rounded-xl shrink-0">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="font-serif font-bold text-lg text-stone-900">
-                    Delete Community Observation?
-                  </h3>
-                  <p className="text-xs text-stone-500 font-mono mt-0.5">
-                    This action will remove the observation from the active Community Registry, the spatial GIS map, and regional health risk models.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs font-mono space-y-1">
-                <div><span className="text-stone-400">ID:</span> <strong className="text-stone-800">{reportToDelete.id}</strong></div>
-                <div><span className="text-stone-400">Title:</span> <span className="text-stone-800">{reportToDelete.title || reportToDelete.category}</span></div>
-                <div><span className="text-stone-400">Date:</span> <span className="text-stone-800">{reportToDelete.date}</span></div>
-              </div>
-
               <div>
-                <label className="block text-xs font-mono font-bold text-stone-700 mb-1.5">
-                  Reason for Deletion:
-                </label>
-                <select
-                  value={deleteReason}
-                  onChange={(e) => setDeleteReason(e.target.value)}
-                  className="w-full p-2.5 text-xs font-mono bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-red-500 cursor-pointer"
-                >
-                  <option value="Resolved / Decommissioned site">Resolved / Decommissioned site</option>
-                  <option value="Duplicate community observation">Duplicate community observation</option>
-                  <option value="Erroneous coordinates or misidentification">Erroneous coordinates or misidentification</option>
-                  <option value="Lab testing proved non-chromium related">Lab testing proved non-chromium related</option>
-                  <option value="Administrative / Test record cleanup">Administrative / Test record cleanup</option>
-                  <option value="Other">Other / Custom justification</option>
-                </select>
-
-                {deleteReason === 'Other' && (
-                  <input
-                    type="text"
-                    placeholder="Enter specific justification..."
-                    value={customDeleteReason}
-                    onChange={(e) => setCustomDeleteReason(e.target.value)}
-                    className="w-full mt-2 p-2 text-xs font-mono bg-stone-50 border border-stone-200 rounded-xl outline-none focus:border-red-500"
-                  />
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-stone-100">
-                <button
-                  type="button"
-                  onClick={() => setReportToDelete(null)}
-                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-mono font-bold rounded-xl cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-mono font-bold rounded-xl cursor-pointer flex items-center gap-1.5 shadow-sm"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Confirm Deletion
-                </button>
+                <h3 className="font-serif font-bold text-lg text-stone-900">
+                  Delete Community Observation?
+                </h3>
+                <span className="text-xs font-mono text-stone-500">Irreversible field record removal</span>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Enlarged Photo Lightbox Modal */}
-        {enlargedImage && (
-          <div 
-            onClick={() => setEnlargedImage(null)}
-            className="fixed inset-0 bg-black/90 z-70 flex items-center justify-center p-4 cursor-zoom-out"
-          >
-            <div className="relative max-w-4xl w-full max-h-[90vh] flex items-center justify-center">
-              <img 
-                src={enlargedImage} 
-                alt="Enlarged photographic evidence" 
-                className="max-h-[85vh] max-w-full object-contain rounded-xl shadow-2xl border border-white/10"
-              />
+            <div className="text-xs font-mono space-y-2 bg-stone-50 p-3.5 rounded-xl border border-stone-200 text-stone-700">
+              <div className="flex justify-between">
+                <span className="text-stone-400">RECORD ID:</span>
+                <strong className="text-stone-900">{reportToDelete.id}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-400">TITLE:</span>
+                <span className="font-semibold text-stone-800 truncate max-w-[220px]">{reportToDelete.title || reportToDelete.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-400">LOCATION:</span>
+                <span>{reportToDelete.locationName || 'Field site'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-stone-400">DATE:</span>
+                <span>{reportToDelete.date}</span>
+              </div>
+            </div>
+
+            <p className="text-xs font-sans text-stone-600 leading-relaxed">
+              This action will purge this observation from the Community Map, Registry table, and summary statistical counters across all temporal horizons.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
-                onClick={() => setEnlargedImage(null)}
-                className="absolute top-2 right-2 p-2 bg-black/80 text-white rounded-full hover:bg-red-600 transition-colors cursor-pointer"
-                title="Close Lightbox"
+                onClick={() => setReportToDelete(null)}
+                className="px-4 py-2 border border-stone-300 rounded-xl text-xs font-mono font-bold text-stone-700 hover:bg-stone-100 cursor-pointer transition-colors"
               >
-                <X className="w-6 h-6" />
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteReport}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-mono font-bold shadow-sm hover:shadow cursor-pointer transition-colors"
+              >
+                Delete Record
               </button>
             </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
+      {/* Full Observation Dossier Modal */}
+      {fullModalReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-start justify-between border-b border-stone-200 pb-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-mono font-bold text-stone-400">{fullModalReport.id}</span>
+                  {getPriorityBadge(fullModalReport.priority)}
+                  {getStatusBadge(fullModalReport.status)}
+                </div>
+                <h3 className="font-serif font-bold text-xl text-[#002116]">
+                  {fullModalReport.title || fullModalReport.category}
+                </h3>
+              </div>
+              <button
+                onClick={() => setFullModalReport(null)}
+                className="p-1 rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-700 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {fullModalReport.photoUrl && (
+              <div className="relative h-64 rounded-xl overflow-hidden border border-stone-200 bg-stone-950">
+                <img
+                  src={fullModalReport.photoUrl}
+                  alt={fullModalReport.title || 'Evidence'}
+                  className="w-full h-full object-cover"
+                />
+                <span className={`absolute bottom-2 left-2 text-[10px] font-mono font-bold px-2.5 py-1 rounded text-white ${
+                  fullModalReport.isSynthetic ? 'bg-amber-600/90' : 'bg-[#12372a]/90'
+                }`}>
+                  {fullModalReport.isSynthetic ? 'Illustrative — Synthetic Image' : 'Photographic Evidence'}
+                </span>
+              </div>
+            )}
+
+            <div className="space-y-3 font-mono text-xs">
+              <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-2">
+                <span className="text-stone-400 block text-[10px] font-bold">DESCRIPTION &amp; WITNESS TESTIMONY</span>
+                <p className="font-sans text-stone-800 leading-relaxed text-sm">
+                  {fullModalReport.description}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1">
+                  <span className="text-stone-400 text-[10px] block">LOCATION</span>
+                  <span className="font-bold text-stone-800">{fullModalReport.locationName || 'Field Point'}</span>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1">
+                  <span className="text-stone-400 text-[10px] block">DATE LOGGED</span>
+                  <span className="font-bold text-stone-800">{fullModalReport.date}</span>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1">
+                  <span className="text-stone-400 text-[10px] block">REPORTER TYPE</span>
+                  <span className="font-bold text-stone-800">{fullModalReport.reporterType || 'Resident'}</span>
+                </div>
+                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-1">
+                  <span className="text-stone-400 text-[10px] block">VERIFICATION NOTES</span>
+                  <span className="font-bold text-emerald-800">{fullModalReport.verificationStatus || fullModalReport.status}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-stone-200">
+              <button
+                onClick={() => {
+                  setReportToDelete(fullModalReport);
+                  setFullModalReport(null);
+                }}
+                className="px-3.5 py-2 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Observation</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    handleLocateOnMap(fullModalReport);
+                    setFullModalReport(null);
+                  }}
+                  className="px-4 py-2 bg-[#12372a] hover:bg-[#002116] text-white rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Locate on Map</span>
+                </button>
+                <button
+                  onClick={() => setFullModalReport(null)}
+                  className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-mono font-bold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enlarged Image Lightbox Modal */}
+      {enlargedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm cursor-pointer animate-in fade-in"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[85vh] overflow-hidden rounded-2xl border border-white/20 shadow-2xl">
+            <img 
+              src={enlargedImage} 
+              alt="Enlarged evidence" 
+              className="w-full h-full object-contain max-h-[85vh]"
+            />
+            <button
+              onClick={() => setEnlargedImage(null)}
+              className="absolute top-3 right-3 p-2 bg-black/60 hover:bg-black/90 text-white rounded-full cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
   );
 }
 
-export default function ReportsDashboardPage() {
+export default function CommunityReportsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#f4fbf7]">
-        <div className="text-center font-mono text-sm text-[#002116] flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full border-2 border-[#002116] border-t-transparent animate-spin"></div>
-          <span>Loading Community Telemetry Workspace...</span>
+      <div className="min-h-screen flex items-center justify-center bg-[#fbfbfa]">
+        <div className="flex flex-col items-center gap-2">
+          <Activity className="w-8 h-8 text-emerald-600 animate-spin" />
+          <span className="font-mono text-xs text-stone-500">Loading Community GIS &amp; Observations...</span>
         </div>
       </div>
     }>
-      <ReportsDashboardContent />
+      <CommunityReportsContent />
     </Suspense>
   );
 }

@@ -142,19 +142,14 @@ export const demoVillages: Village[] = [
 
 // 2. Hand Pumps / Water Sources
 export const demoWaterSources: WaterSource[] = [
+  // --- Khanchandpur (V-001) ---
   {
     id: 'HP-001',
     villageId: 'V-001',
     type: 'hand_pump',
     status: 'do_not_use',
     coordinates: { lat: 26.466, lon: 80.343 },
-    restrictions: {
-      drinking: true,
-      cooking: true,
-      bathing: true,
-      irrigation: false,
-      livestock: true
-    },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
     populationServed: 120,
     nearestSchoolDistance: 300,
     agriculturalArea: 1.5,
@@ -167,17 +162,72 @@ export const demoWaterSources: WaterSource[] = [
     type: 'hand_pump',
     status: 'restricted',
     coordinates: { lat: 26.464, lon: 80.341 },
-    restrictions: {
-      drinking: true,
-      cooking: true,
-      bathing: false,
-      irrigation: false,
-      livestock: false
-    },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
     populationServed: 85,
     nearestSchoolDistance: 500,
     agriculturalArea: 2.0,
     alternativeSourceId: 'HP-008',
+    isDemo: true
+  },
+  {
+    id: 'HP-003',
+    villageId: 'V-001',
+    type: 'tube_well',
+    status: 'do_not_use',
+    coordinates: { lat: 26.463, lon: 80.341 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 140,
+    nearestSchoolDistance: 600,
+    agriculturalArea: 2.5,
+    alternativeSourceId: 'HP-008',
+    isDemo: true
+  },
+  {
+    id: 'HP-004',
+    villageId: 'V-001',
+    type: 'hand_pump',
+    status: 'do_not_use',
+    coordinates: { lat: 26.465, lon: 80.344 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 95,
+    nearestSchoolDistance: 400,
+    agriculturalArea: 1.8,
+    isDemo: true
+  },
+  {
+    id: 'HP-005',
+    villageId: 'V-001',
+    type: 'hand_pump',
+    status: 'do_not_use',
+    coordinates: { lat: 26.467, lon: 80.340 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 110,
+    nearestSchoolDistance: 150,
+    agriculturalArea: 1.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-006',
+    villageId: 'V-001',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.462, lon: 80.339 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 75,
+    nearestSchoolDistance: 700,
+    agriculturalArea: 3.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-007',
+    villageId: 'V-001',
+    type: 'hand_pump',
+    status: 'do_not_use',
+    coordinates: { lat: 26.4655, lon: 80.3418 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 130,
+    nearestSchoolDistance: 350,
+    agriculturalArea: 1.2,
     isDemo: true
   },
   {
@@ -186,154 +236,402 @@ export const demoWaterSources: WaterSource[] = [
     type: 'deep_borewell',
     status: 'safe',
     coordinates: { lat: 26.468, lon: 80.340 },
-    restrictions: {
-      drinking: false,
-      cooking: false,
-      bathing: false,
-      irrigation: false,
-      livestock: false
-    },
-    populationServed: 500,
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 550,
     nearestSchoolDistance: 200,
     agriculturalArea: 5.0,
     isDemo: true
   },
+  {
+    id: 'DW-001',
+    villageId: 'V-001',
+    type: 'piped_water',
+    status: 'safe',
+    coordinates: { lat: 26.469, lon: 80.343 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 800,
+    nearestSchoolDistance: 180,
+    agriculturalArea: 4.0,
+    isDemo: true
+  },
+  {
+    id: 'DW-002',
+    villageId: 'V-001',
+    type: 'solar_ro_plant',
+    status: 'safe',
+    coordinates: { lat: 26.461, lon: 80.345 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 650,
+    nearestSchoolDistance: 320,
+    agriculturalArea: 3.5,
+    isDemo: true
+  },
+
+  // --- Rania (V-002) ---
   {
     id: 'HP-010',
     villageId: 'V-002',
     type: 'hand_pump',
     status: 'do_not_use',
     coordinates: { lat: 26.449, lon: 80.300 },
-    restrictions: {
-      drinking: true,
-      cooking: true,
-      bathing: true,
-      irrigation: true,
-      livestock: true
-    },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: true, livestock: true },
     populationServed: 60,
     nearestSchoolDistance: 800,
     agriculturalArea: 1.2,
     isDemo: true
   },
   {
+    id: 'HP-011',
+    villageId: 'V-002',
+    type: 'hand_pump',
+    status: 'do_not_use',
+    coordinates: { lat: 26.447, lon: 80.298 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 70,
+    nearestSchoolDistance: 650,
+    agriculturalArea: 1.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-012',
+    villageId: 'V-002',
+    type: 'tube_well',
+    status: 'restricted',
+    coordinates: { lat: 26.444, lon: 80.301 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 90,
+    nearestSchoolDistance: 900,
+    agriculturalArea: 2.2,
+    isDemo: true
+  },
+  {
+    id: 'HP-013',
+    villageId: 'V-002',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.451, lon: 80.304 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 80,
+    nearestSchoolDistance: 500,
+    agriculturalArea: 1.5,
+    isDemo: true
+  },
+  {
+    id: 'HP-014',
+    villageId: 'V-002',
+    type: 'hand_pump',
+    status: 'do_not_use',
+    coordinates: { lat: 26.448, lon: 80.302 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 110,
+    nearestSchoolDistance: 450,
+    agriculturalArea: 1.8,
+    isDemo: true
+  },
+  {
+    id: 'DW-003',
+    villageId: 'V-002',
+    type: 'deep_borewell',
+    status: 'safe',
+    coordinates: { lat: 26.446, lon: 80.294 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 520,
+    nearestSchoolDistance: 400,
+    agriculturalArea: 4.5,
+    isDemo: true
+  },
+  {
+    id: 'DW-004',
+    villageId: 'V-002',
+    type: 'solar_ro_plant',
+    status: 'safe',
+    coordinates: { lat: 26.453, lon: 80.306 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 700,
+    nearestSchoolDistance: 250,
+    agriculturalArea: 3.0,
+    isDemo: true
+  },
+
+  // --- Panki (V-003) ---
+  {
     id: 'HP-015',
     villageId: 'V-003',
     type: 'hand_pump',
-    status: 'unknown',
+    status: 'do_not_use',
     coordinates: { lat: 26.473, lon: 80.286 },
-    restrictions: {
-      drinking: false,
-      cooking: false,
-      bathing: false,
-      irrigation: false,
-      livestock: false
-    },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
     populationServed: 150,
     nearestSchoolDistance: 400,
     agriculturalArea: 0.5,
     isDemo: true
   },
-  // Adding more dummy ones for total 35
-  ...Array.from({ length: 30 }).map((_, i) => ({
-    id: `HP-0${16 + i}`,
-    villageId: i < 15 ? 'V-001' : i < 20 ? 'V-002' : i < 25 ? 'V-003' : i < 28 ? 'V-004' : 'V-005',
-    type: 'hand_pump',
-    status: i % 4 === 0 ? 'safe' : i % 3 === 0 ? 'do_not_use' : 'restricted',
-    coordinates: { lat: 26.4 + Math.random() * 0.1, lon: 80.2 + Math.random() * 0.2 },
-    restrictions: {
-      drinking: i % 4 !== 0,
-      cooking: i % 4 !== 0,
-      bathing: i % 3 === 0,
-      irrigation: false,
-      livestock: i % 3 === 0
-    },
-    populationServed: 50 + Math.floor(Math.random() * 100),
-    nearestSchoolDistance: Math.floor(Math.random() * 1000),
-    agriculturalArea: Math.random() * 5,
+  {
+    id: 'HP-016',
+    villageId: 'V-003',
+    type: 'tube_well',
+    status: 'do_not_use',
+    coordinates: { lat: 26.475, lon: 80.283 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 130,
+    nearestSchoolDistance: 550,
+    agriculturalArea: 1.1,
     isDemo: true
-  }))
+  },
+  {
+    id: 'HP-017',
+    villageId: 'V-003',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.471, lon: 80.284 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 100,
+    nearestSchoolDistance: 600,
+    agriculturalArea: 0.8,
+    isDemo: true
+  },
+  {
+    id: 'HP-018',
+    villageId: 'V-003',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.476, lon: 80.289 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 115,
+    nearestSchoolDistance: 700,
+    agriculturalArea: 1.4,
+    isDemo: true
+  },
+  {
+    id: 'DW-005',
+    villageId: 'V-003',
+    type: 'piped_water',
+    status: 'safe',
+    coordinates: { lat: 26.469, lon: 80.291 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 920,
+    nearestSchoolDistance: 300,
+    agriculturalArea: 3.5,
+    isDemo: true
+  },
+  {
+    id: 'DW-006',
+    villageId: 'V-003',
+    type: 'deep_borewell',
+    status: 'safe',
+    coordinates: { lat: 26.478, lon: 80.281 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 640,
+    nearestSchoolDistance: 450,
+    agriculturalArea: 4.0,
+    isDemo: true
+  },
+
+  // --- Sachendi (V-004) ---
+  {
+    id: 'HP-020',
+    villageId: 'V-004',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.424, lon: 80.253 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 70,
+    nearestSchoolDistance: 500,
+    agriculturalArea: 1.2,
+    isDemo: true
+  },
+  {
+    id: 'HP-021',
+    villageId: 'V-004',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.426, lon: 80.254 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 85,
+    nearestSchoolDistance: 350,
+    agriculturalArea: 1.5,
+    isDemo: true
+  },
+  {
+    id: 'HP-022',
+    villageId: 'V-004',
+    type: 'deep_borewell',
+    status: 'safe',
+    coordinates: { lat: 26.428, lon: 80.256 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 480,
+    nearestSchoolDistance: 80,
+    agriculturalArea: 3.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-023',
+    villageId: 'V-004',
+    type: 'solar_ro_plant',
+    status: 'safe',
+    coordinates: { lat: 26.423, lon: 80.251 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 560,
+    nearestSchoolDistance: 220,
+    agriculturalArea: 2.8,
+    isDemo: true
+  },
+  {
+    id: 'HP-024',
+    villageId: 'V-004',
+    type: 'tube_well',
+    status: 'do_not_use',
+    coordinates: { lat: 26.427, lon: 80.258 },
+    restrictions: { drinking: true, cooking: true, bathing: true, irrigation: false, livestock: true },
+    populationServed: 95,
+    nearestSchoolDistance: 600,
+    agriculturalArea: 2.0,
+    isDemo: true
+  },
+
+  // --- Rooma (V-005) ---
+  {
+    id: 'HP-026',
+    villageId: 'V-005',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.396, lon: 80.412 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 120,
+    nearestSchoolDistance: 450,
+    agriculturalArea: 1.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-027',
+    villageId: 'V-005',
+    type: 'deep_borewell',
+    status: 'safe',
+    coordinates: { lat: 26.386, lon: 80.411 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 680,
+    nearestSchoolDistance: 250,
+    agriculturalArea: 5.0,
+    isDemo: true
+  },
+  {
+    id: 'HP-028',
+    villageId: 'V-005',
+    type: 'piped_water',
+    status: 'safe',
+    coordinates: { lat: 26.388, lon: 80.415 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 740,
+    nearestSchoolDistance: 150,
+    agriculturalArea: 3.5,
+    isDemo: true
+  },
+  {
+    id: 'HP-029',
+    villageId: 'V-005',
+    type: 'hand_pump',
+    status: 'restricted',
+    coordinates: { lat: 26.394, lon: 80.413 },
+    restrictions: { drinking: true, cooking: true, bathing: false, irrigation: false, livestock: false },
+    populationServed: 90,
+    nearestSchoolDistance: 700,
+    agriculturalArea: 1.5,
+    isDemo: true
+  },
+  {
+    id: 'HP-030',
+    villageId: 'V-005',
+    type: 'deep_borewell',
+    status: 'safe',
+    coordinates: { lat: 26.383, lon: 80.410 },
+    restrictions: { drinking: false, cooking: false, bathing: false, irrigation: false, livestock: false },
+    populationServed: 610,
+    nearestSchoolDistance: 380,
+    agriculturalArea: 4.2,
+    isDemo: true
+  }
 ];
 
 // 3. Historical Chromium Measurements (2020-2026)
 export const demoMeasurements: Measurement[] = [
-  {
-    id: 'M-001',
-    sourceId: 'HP-001',
-    date: '2020-05-15',
-    parameter: 'Total Chromium',
-    value: 0.08,
-    unit: 'mg/L',
-    method: 'AAS',
-    laboratoryId: 'LAB-01',
-    verificationStatus: 'verified',
-    isDemo: true
-  },
-  {
-    id: 'M-002',
-    sourceId: 'HP-001',
-    date: '2022-08-20',
-    parameter: 'Total Chromium',
-    value: 0.15,
-    unit: 'mg/L',
-    method: 'AAS',
-    laboratoryId: 'LAB-01',
-    verificationStatus: 'verified',
-    isDemo: true
-  },
-  {
-    id: 'M-003',
-    sourceId: 'HP-001',
-    date: '2024-11-10',
-    parameter: 'Total Chromium',
-    value: 0.25,
-    unit: 'mg/L',
-    method: 'ICP-MS',
-    laboratoryId: 'LAB-02',
-    verificationStatus: 'verified',
-    isDemo: true
-  },
-  {
-    id: 'M-004',
-    sourceId: 'HP-008',
-    date: '2025-02-15',
-    parameter: 'Total Chromium',
-    value: 0.02,
-    unit: 'mg/L',
-    method: 'ICP-MS',
-    laboratoryId: 'LAB-02',
-    verificationStatus: 'verified',
-    isDemo: true
-  },
-  {
-    id: 'M-005',
-    sourceId: 'HP-010',
-    date: '2023-04-12',
-    parameter: 'Chromium (VI)',
-    value: 0.12,
-    unit: 'mg/L',
-    method: 'Colorimetric',
-    laboratoryId: 'LAB-03',
-    verificationStatus: 'pending',
-    isDemo: true
-  },
-  ...Array.from({ length: 145 }).map((_, i) => {
-    const year = 2020 + Math.floor(Math.random() * 7);
-    const month = String(1 + Math.floor(Math.random() * 12)).padStart(2, '0');
-    const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, '0');
-    return {
-      id: `M-0${6 + i}`,
-      sourceId: `HP-0${1 + Math.floor(Math.random() * 35)}`,
-      date: `${year}-${month}-${day}`,
-      parameter: Math.random() > 0.8 ? 'Chromium (VI)' : 'Total Chromium',
-      value: Number((0.005 + Math.random() * 0.35).toFixed(3)),
-      unit: 'mg/L',
-      method: Math.random() > 0.5 ? 'AAS' : 'ICP-MS',
-      laboratoryId: Math.random() > 0.5 ? 'LAB-01' : 'LAB-02',
-      verificationStatus: Math.random() > 0.2 ? 'verified' : 'pending',
-      isDemo: true
-    };
-  })
+  // Khanchandpur Measurements
+  { id: 'M-001', sourceId: 'HP-001', date: '2020-05-15', parameter: 'Total Chromium', value: 0.08, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-002', sourceId: 'HP-001', date: '2022-08-20', parameter: 'Total Chromium', value: 0.15, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-003', sourceId: 'HP-001', date: '2024-11-10', parameter: 'Total Chromium', value: 0.25, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-004', sourceId: 'HP-001', date: '2026-03-05', parameter: 'Chromium (VI)', value: 0.28, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-005', sourceId: 'HP-002', date: '2021-04-10', parameter: 'Total Chromium', value: 0.06, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-006', sourceId: 'HP-002', date: '2023-06-18', parameter: 'Total Chromium', value: 0.085, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-007', sourceId: 'HP-002', date: '2025-01-20', parameter: 'Chromium (VI)', value: 0.092, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-008', sourceId: 'HP-003', date: '2022-02-14', parameter: 'Total Chromium', value: 0.12, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-009', sourceId: 'HP-003', date: '2026-08-15', parameter: 'Chromium (VI)', value: 0.19, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-03', verificationStatus: 'verified', isDemo: true },
+
+  // Safe Sources in Khanchandpur (Cr < 0.05 mg/L)
+  { id: 'M-010', sourceId: 'HP-008', date: '2020-06-10', parameter: 'Total Chromium', value: 0.018, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-011', sourceId: 'HP-008', date: '2022-09-12', parameter: 'Total Chromium', value: 0.015, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-012', sourceId: 'HP-008', date: '2024-05-18', parameter: 'Total Chromium', value: 0.012, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-013', sourceId: 'HP-008', date: '2026-02-15', parameter: 'Total Chromium', value: 0.011, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-014', sourceId: 'DW-001', date: '2023-01-10', parameter: 'Total Chromium', value: 0.005, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-015', sourceId: 'DW-001', date: '2025-06-14', parameter: 'Total Chromium', value: 0.004, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-016', sourceId: 'DW-002', date: '2022-11-20', parameter: 'Total Chromium', value: 0.003, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-017', sourceId: 'DW-002', date: '2025-09-08', parameter: 'Chromium (VI)', value: 0.002, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  // Rania Measurements
+  { id: 'M-020', sourceId: 'HP-010', date: '2020-04-12', parameter: 'Total Chromium', value: 0.16, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-021', sourceId: 'HP-010', date: '2023-04-12', parameter: 'Chromium (VI)', value: 0.28, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-03', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-022', sourceId: 'HP-010', date: '2026-01-15', parameter: 'Chromium (VI)', value: 0.34, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-023', sourceId: 'HP-011', date: '2021-08-20', parameter: 'Total Chromium', value: 0.18, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-024', sourceId: 'HP-011', date: '2024-09-10', parameter: 'Chromium (VI)', value: 0.22, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-03', verificationStatus: 'verified', isDemo: true },
+
+  // Safe Sources in Rania
+  { id: 'M-025', sourceId: 'DW-003', date: '2022-03-15', parameter: 'Total Chromium', value: 0.009, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-026', sourceId: 'DW-003', date: '2025-05-20', parameter: 'Total Chromium', value: 0.008, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-027', sourceId: 'DW-004', date: '2023-07-11', parameter: 'Total Chromium', value: 0.006, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-028', sourceId: 'DW-004', date: '2025-10-18', parameter: 'Total Chromium', value: 0.005, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  // Panki Measurements
+  { id: 'M-030', sourceId: 'HP-015', date: '2021-05-18', parameter: 'Total Chromium', value: 0.14, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-031', sourceId: 'HP-015', date: '2024-03-22', parameter: 'Chromium (VI)', value: 0.21, unit: 'mg/L', method: 'Colorimetric', laboratoryId: 'LAB-03', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-032', sourceId: 'HP-016', date: '2022-06-14', parameter: 'Total Chromium', value: 0.17, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+
+  // Safe Sources in Panki
+  { id: 'M-033', sourceId: 'DW-005', date: '2022-10-05', parameter: 'Total Chromium', value: 0.012, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-034', sourceId: 'DW-005', date: '2025-08-12', parameter: 'Total Chromium', value: 0.011, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-035', sourceId: 'DW-006', date: '2023-04-19', parameter: 'Total Chromium', value: 0.008, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-036', sourceId: 'DW-006', date: '2025-11-25', parameter: 'Total Chromium', value: 0.007, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  // Sachendi Measurements
+  { id: 'M-040', sourceId: 'HP-020', date: '2021-09-14', parameter: 'Total Chromium', value: 0.065, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-041', sourceId: 'HP-021', date: '2023-11-09', parameter: 'Total Chromium', value: 0.078, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-042', sourceId: 'HP-024', date: '2020-11-12', parameter: 'Total Chromium', value: 0.15, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+
+  // Safe Sources in Sachendi
+  { id: 'M-043', sourceId: 'HP-022', date: '2021-03-10', parameter: 'Total Chromium', value: 0.010, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-044', sourceId: 'HP-022', date: '2024-04-15', parameter: 'Total Chromium', value: 0.009, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-045', sourceId: 'HP-023', date: '2022-08-20', parameter: 'Total Chromium', value: 0.005, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-046', sourceId: 'HP-023', date: '2025-03-18', parameter: 'Total Chromium', value: 0.004, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  // Rooma Measurements
+  { id: 'M-050', sourceId: 'HP-026', date: '2022-01-18', parameter: 'Total Chromium', value: 0.058, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-051', sourceId: 'HP-029', date: '2023-03-12', parameter: 'Total Chromium', value: 0.062, unit: 'mg/L', method: 'AAS', laboratoryId: 'LAB-01', verificationStatus: 'verified', isDemo: true },
+
+  // Safe Sources in Rooma
+  { id: 'M-052', sourceId: 'HP-027', date: '2020-08-14', parameter: 'Total Chromium', value: 0.009, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-053', sourceId: 'HP-027', date: '2024-06-22', parameter: 'Total Chromium', value: 0.008, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-054', sourceId: 'HP-028', date: '2021-02-15', parameter: 'Total Chromium', value: 0.005, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-055', sourceId: 'HP-028', date: '2025-07-10', parameter: 'Total Chromium', value: 0.004, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+
+  { id: 'M-056', sourceId: 'HP-030', date: '2022-05-11', parameter: 'Total Chromium', value: 0.007, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true },
+  { id: 'M-057', sourceId: 'HP-030', date: '2025-09-19', parameter: 'Total Chromium', value: 0.006, unit: 'mg/L', method: 'ICP-MS', laboratoryId: 'LAB-02', verificationStatus: 'verified', isDemo: true }
 ];
 
 // 4. Groundwater Monitoring Points

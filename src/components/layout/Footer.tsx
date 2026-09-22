@@ -3,122 +3,140 @@
 import React from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/i18n';
-import { Shield, ExternalLink } from 'lucide-react';
+import { Layers, Shield, ExternalLink, Heart } from 'lucide-react';
 
 export default function Footer() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   return (
-    <footer className="bg-stone-900 text-stone-300 lg:pb-0 pb-16">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+    <footer className="bg-[#002116] text-white/70 border-t border-white/10 lg:pb-0 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-12 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Brand Column */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 bg-green-700 rounded-xl flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
+          <div className="sm:col-span-2 lg:col-span-1 space-y-4">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shadow-inner">
+                <span className="material-symbols-outlined text-[20px]">layers</span>
               </div>
-              <span className="text-lg font-bold text-white tracking-tight">
-                AquaShield
+              <span className="text-xl font-serif font-bold text-white tracking-tight">
+                Bhujal AI
               </span>
             </Link>
-            <p className="text-sm text-stone-400 leading-relaxed max-w-xs">
-              {t.brand.fullName}
+            <p className="text-xs text-white/70 leading-relaxed font-sans">
+              Intelligence Beneath the Surface. Connecting physical bore logs, 3D Kriging advection plumes, and biological phytoremediation to safeguard unseen drinking aquifers in Uttar Pradesh.
             </p>
+            <div className="inline-flex items-center gap-2 text-[10px] font-mono text-emerald-300 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>HYDRO-GEO v2.4 TELEMETRY ACTIVE</span>
+            </div>
           </div>
 
           {/* Platform Column */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              {t.footer.platform}
+            <h3 className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider mb-4">
+              Intelligence Platform
             </h3>
-            <ul className="space-y-3">
-              {[
-                { href: '/dashboard', label: t.nav.dashboard },
-                { href: '/map', label: t.nav.map },
-                { href: '/water-safety', label: t.nav.waterSafety },
-                { href: '/remediation', label: t.nav.remediation },
-                { href: '/evidence', label: t.nav.evidence },
-              ].map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-stone-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-xs">
+              <li>
+                <Link href="/" className="hover:text-white transition-colors">
+                  Overview &amp; Environmental Story
+                </Link>
+              </li>
+              <li>
+                <Link href="/map" className="hover:text-white transition-colors">
+                  3D Contamination Map
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard" className="hover:text-white transition-colors">
+                  Hydro-Geo Decision Console
+                </Link>
+              </li>
+              <li>
+                <Link href="/water-safety" className="hover:text-white transition-colors">
+                  Water Safety &amp; Lifeline Navigator
+                </Link>
+              </li>
+              <li>
+                <Link href="/remediation" className="hover:text-white transition-colors">
+                  Phytoremediation Planner
+                </Link>
+              </li>
+              <li>
+                <Link href="/data-sources" className="hover:text-white transition-colors">
+                  Data Center &amp; Upload Wizard
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Community Column */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              {t.footer.community}
+            <h3 className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider mb-4">
+              Community &amp; Civic Action
             </h3>
-            <ul className="space-y-3">
-              {[
-                { href: '/reports/new', label: t.footer.reportIssue },
-                { href: '/water-safety', label: t.footer.findWater },
-                { href: '/about', label: t.footer.resources },
-                { href: '/about', label: t.footer.help },
-              ].map((link, i) => (
-                <li key={i}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-stone-400 hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-xs">
+              <li>
+                <Link href="/water-safety" className="hover:text-white transition-colors">
+                  Is My Water Safe? (पानी की जाँच)
+                </Link>
+              </li>
+              <li>
+                <Link href="/reports/new" className="hover:text-white transition-colors">
+                  Report Water Contamination (समस्या दर्ज करें)
+                </Link>
+              </li>
+              <li>
+                <Link href="/villages" className="hover:text-white transition-colors">
+                  Village Risk Registry
+                </Link>
+              </li>
+              <li>
+                <Link href="/prioritization" className="hover:text-white transition-colors">
+                  Intervention Priority Index
+                </Link>
+              </li>
+              <li>
+                <Link href="/evidence" className="hover:text-white transition-colors">
+                  Field Verification &amp; Evidence
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Research Column */}
+          {/* Research & Compliance */}
           <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              {t.footer.research}
+            <h3 className="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider mb-4">
+              Standards &amp; Science
             </h3>
-            <ul className="space-y-3">
-              {[
-                { href: '/data-sources', label: t.footer.dataMethodology },
-                { href: '/about', label: t.footer.modelDocs },
-                { href: '/data-sources', label: t.footer.sources },
-                { href: '/about', label: t.footer.api, external: true },
-              ].map((link, i) => (
-                <li key={i}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-stone-400 hover:text-white transition-colors inline-flex items-center gap-1"
-                  >
-                    {link.label}
-                    {link.external && <ExternalLink className="w-3 h-3" />}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-xs">
+              <li>
+                <span className="text-white/90 font-medium block">WHO Drinking Standard:</span>
+                <span className="font-mono text-emerald-300 text-[11px]">0.05 mg/L Max Cr(Total)</span>
+              </li>
+              <li className="pt-1">
+                <span className="text-white/90 font-medium block">Laboratory Protocol:</span>
+                <span className="text-stone-400 text-[11px]">ISO/IEC 17025 ICP-MS Spectrometry</span>
+              </li>
+              <li className="pt-1">
+                <span className="text-white/90 font-medium block">Target Basin:</span>
+                <span className="text-stone-400 text-[11px]">Kanpur Dehat, Kanpur Nagar &amp; Fatehpur</span>
+              </li>
+              <li className="pt-2">
+                <Link href="/about" className="text-emerald-300 hover:underline inline-flex items-center gap-1 font-mono text-[11px]">
+                  <span>Methodology Documentation</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-stone-500">{t.footer.copyright}</p>
-          <div className="flex items-center gap-6">
-            {[
-              { href: '/privacy', label: t.footer.privacy },
-              { href: '/terms', label: t.footer.terms },
-              { href: '/accessibility', label: t.footer.accessibility },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-xs text-stone-500 hover:text-white transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50 font-mono">
+          <p>© 2026 Bhujal AI. Dedicated to clean drinking water and environmental justice.</p>
+          <div className="flex items-center gap-4">
+            <span className="text-emerald-400/70">From contamination data to community action.</span>
           </div>
         </div>
       </div>

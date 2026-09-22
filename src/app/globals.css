@@ -1,12 +1,47 @@
 @import "tailwindcss";
 
+@theme {
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-headline: var(--font-newsreader), Georgia, serif;
+  --font-headline-lg: var(--font-newsreader), Georgia, serif;
+  --font-headline-md: var(--font-newsreader), Georgia, serif;
+  --font-headline-sm: var(--font-newsreader), Georgia, serif;
+  --font-body-lg: var(--font-inter), system-ui, sans-serif;
+  --font-body-md: var(--font-inter), system-ui, sans-serif;
+  --font-body-sm: var(--font-inter), system-ui, sans-serif;
+  --font-data-mono: var(--font-inter), monospace;
+  --font-label-caps: var(--font-inter), sans-serif;
+
+  --color-primary: #002116;
+  --color-primary-container: #12372a;
+  --color-primary-fixed: #c3ebd8;
+  --color-surface: #F7FAF8;
+  --color-surface-dim: #eaf4f2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f8f5;
+  --color-surface-container: #e4f0ea;
+  --color-surface-container-high: #d6e8df;
+  --color-on-surface: #0c1f18;
+  --color-on-surface-variant: #3d4b45;
+  --color-outline: #6f7e77;
+  --color-outline-variant: #c4d5cc;
+  --color-secondary: #006492;
+  --color-secondary-container: #7dc9ff;
+  --color-tertiary: #765A43;
+  --color-tertiary-fixed: #ffdcc2;
+  --color-error: #ba1a1a;
+  --color-error-container: #fee2e2;
+  --color-verified: #2E8B68;
+}
+
 @layer base {
   :root {
     --font-sans: var(--font-inter), 'Noto Sans Devanagari', system-ui, -apple-system, sans-serif;
+    --font-headline: var(--font-newsreader), Georgia, serif;
   }
 
   * {
-    @apply border-stone-200;
+    border-color: #c4d5cc;
   }
 
   html {
@@ -16,12 +51,14 @@
 
   body {
     font-family: var(--font-sans);
-    @apply text-stone-900 bg-stone-50;
+    color: #0c1f18;
+    background-color: #F7FAF8;
   }
 
   /* Focus styles for accessibility */
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-green-600;
+    outline: 2px solid #006492;
+    outline-offset: 2px;
   }
 
   /* Minimum touch targets */
@@ -37,58 +74,81 @@
   }
 }
 
+/* Material symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+/* Subsurface Intelligence Grid & Texture Patterns */
+.topo-grid {
+  background-image: radial-gradient(rgba(18, 55, 42, 0.09) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.carto-grid {
+  background-image: linear-gradient(to right, rgba(18, 55, 42, 0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(18, 55, 42, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.contour-lines {
+  background-image: repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 40px, rgba(18,55,42,0.035) 41px, transparent 42px);
+}
+
+.cinematic-vignette {
+  background: linear-gradient(180deg, rgba(0, 33, 22, 0.85) 0%, rgba(0, 33, 22, 0.4) 40%, rgba(0, 33, 22, 0.95) 100%);
+}
+
+.plume-pulse {
+  animation: pulse-glow 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% { opacity: 0.7; transform: scale(0.99); }
+  100% { opacity: 1; transform: scale(1.01); }
+}
+
+.strata-edge-danger {
+  border-left: 8px solid #ba1a1a;
+}
+
+.strata-edge-safe {
+  border-left: 8px solid #2E8B68;
+}
+
+.strata-edge-tertiary {
+  border-left: 8px solid #765A43;
+}
+
+.strata-indicator {
+  background: linear-gradient(180deg, #765A43 0%, #D8C7A5 45%, #1976A8 100%);
+}
+
+.stripes-sim {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(91, 114, 199, 0.07),
+    rgba(91, 114, 199, 0.07) 10px,
+    rgba(91, 114, 199, 0.14) 10px,
+    rgba(91, 114, 199, 0.14) 20px
+  );
+}
+
 /* MapLibre GL styles */
 @import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Custom scrollbar */
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #d6d3d1 transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #d6d3d1;
-    border-radius: 3px;
-  }
+.custom-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
 }
 
-/* Demo data watermark */
-.demo-watermark {
-  position: relative;
-}
-
-.demo-watermark::after {
-  content: 'DEMO DATA';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-30deg);
-  font-size: 3rem;
-  font-weight: 800;
-  color: rgba(217, 119, 6, 0.07);
-  pointer-events: none;
-  z-index: 1;
-  white-space: nowrap;
-  letter-spacing: 0.15em;
-}
-
-/* Contamination pulse animation (subtle) */
-@keyframes pulse-contamination {
-  0%, 100% { opacity: 0.7; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.15); }
-}
-
-.animate-contamination-pulse {
-  animation: pulse-contamination 3s ease-in-out infinite;
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(18, 55, 42, 0.2);
+  border-radius: 4px;
 }
 
 /* Slide transitions */
@@ -98,14 +158,5 @@
 }
 
 .animate-slide-up {
-  animation: slideUp 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: slideUp 0.3s ease-out forwards;
 }

@@ -625,6 +625,45 @@ class BhujalDataStore {
   }
 
   // -------------------------------------------------------------
+  // Groundwater Monitoring Points
+  // -------------------------------------------------------------
+  public getGroundwaterPoints(): GroundwaterPoint[] {
+    return demoGroundwaterPoints;
+  }
+
+  public getGroundwaterPointsByVillage(villageId: string): GroundwaterPoint[] {
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoGroundwaterPoints.filter((gp) => gp.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
+  // Healthcare Facilities
+  // -------------------------------------------------------------
+  public getHealthcare(): HealthcareFacility[] {
+    return demoHealthcare;
+  }
+
+  public getHealthcareByVillage(villageId: string): HealthcareFacility[] {
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoHealthcare.filter((h) => h.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
+  // Agricultural Zones
+  // -------------------------------------------------------------
+  public getAgriculturalZones(): AgriculturalZone[] {
+    return demoAgriculturalZones;
+  }
+
+  public getAgriculturalZonesByVillage(villageId: string): AgriculturalZone[] {
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoAgriculturalZones.filter((a) => a.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
   // Contamination Sources
   // -------------------------------------------------------------
   public getContaminationSources(): ContaminationSource[] {

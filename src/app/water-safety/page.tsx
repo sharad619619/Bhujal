@@ -35,6 +35,7 @@ function WaterSafetyContent() {
 
   const [searchQuery, setSearchQuery] = useState(initialSourceParam);
   const [verdict, setVerdict] = useState<WaterSafetyVerdict | null>(null);
+  const [allWaterSources, setAllWaterSources] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -52,8 +53,16 @@ function WaterSafetyContent() {
 
   // Evaluate initial search on mount or URL change
   useEffect(() => {
-    executeSafetyCheck(searchQuery);
-  }, []);
+    const sources = db.getWaterSources();
+    setAllWaterSources(sources);
+    const paramVal = searchParams.get('source') || searchParams.get('query') || initialSourceParam;
+    if (paramVal) {
+      setSearchQuery(paramVal);
+      executeSafetyCheck(paramVal);
+    } else {
+      executeSafetyCheck(searchQuery);
+    }
+  }, [searchParams]);
 
   const executeSafetyCheck = (query: string, lat?: number, lon?: number) => {
     const result = db.checkWaterSafety(query, lat, lon);
@@ -254,6 +263,30 @@ function WaterSafetyContent() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>{isHindi ? 'जाँच करें (Check Safety)' : 'Check Safety'}</span>
                 </button>
+              </div>
+
+              {/* Direct Water Source Dropdown Selector */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-stone-100 text-xs font-mono">
+                <span className="text-stone-500 font-semibold">
+                  {isHindi ? 'या सीधे मॉनिटर किया गया स्रोत चुनें:' : 'Or pick from monitored water sources:'}
+                </span>
+                <select
+                  value={allWaterSources.some(s => s.id.toLowerCase() === searchQuery.toLowerCase()) ? searchQuery : ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSearchQuery(e.target.value);
+                      executeSafetyCheck(e.target.value, userLocation?.lat, userLocation?.lon);
+                    }
+                  }}
+                  className="bg-[#f2f8f5] border border-stone-300 rounded-lg px-3 py-1.5 text-xs text-stone-800 font-mono font-medium focus:ring-1 focus:ring-[#006492] outline-none cursor-pointer"
+                >
+                  <option value="">-- Choose from 35 Monitored Water Points --</option>
+                  {allWaterSources.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.id}: {s.name} ({s.status.toUpperCase()})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {geoError && (

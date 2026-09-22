@@ -31,25 +31,36 @@ export default function VillageDigitalTwinPage() {
   const params = useParams();
   const id = params.id as string;
   const [year, setYear] = useState(2026);
-  const [activeTab, setActiveTab] = useState<'measurements' | 'reports' | 'remediation' | 'geology'>('measurements');
+  const [activeTab, setActiveTab] = useState<'measurements' | 'reports' | 'timeline' | 'remediation' | 'geology'>('measurements');
   
   const [village, setVillage] = useState<VillageRecord | null>(null);
   const [sources, setSources] = useState<WaterSourceRecord[]>([]);
   const [reports, setReports] = useState<CommunityReportRecord[]>([]);
   const [remediation, setRemediation] = useState<RemediationProjectRecord[]>([]);
+  const [timeline, setTimeline] = useState<any[]>([]);
+  const [schools, setSchools] = useState<any[]>([]);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    const db = getDb();
-    const v = db.getVillageById(id);
-    if (v) {
-      setVillage(v);
-      setSources(db.getWaterSourcesByVillage(id));
-      setReports(db.getReportsByVillage(id));
-      setRemediation(db.getRemediationProjects().filter(p => p.villageId === id));
-    }
+    const loadData = () => {
+      const db = getDb();
+      const v = db.getVillageById(id);
+      if (v) {
+        setVillage(v);
+        setSources(db.getWaterSourcesByVillage(id));
+        setReports(db.getReportsByVillage(id));
+        setRemediation(db.getRemediationProjects().filter(p => p.villageId === id));
+        setTimeline(db.getTimelineEventsByVillage(id));
+        setSchools(db.getSchoolsByVillage(id));
+      }
+    };
+    loadData();
+
+    const handleUpdate = () => loadData();
+    window.addEventListener('bhujal_data_updated', handleUpdate);
+    return () => window.removeEventListener('bhujal_data_updated', handleUpdate);
   }, [id]);
 
   // Initialize MapLibre map centered on village
@@ -398,6 +409,7 @@ export default function VillageDigitalTwinPage() {
             {[
               { id: 'measurements', label: `Water Sources (${sources.length})` },
               { id: 'reports', label: `Community Reports (${reports.length})` },
+              { id: 'timeline', label: `Historical Milestones (${timeline.length})` },
               { id: 'remediation', label: `Remediation Projects (${remediation.length})` },
               { id: 'geology', label: 'Hydrogeological Strata' },
             ].map((tab) => (
@@ -418,54 +430,69 @@ export default function VillageDigitalTwinPage() {
           <div className="p-6">
             {activeTab === 'measurements' && (
               <div>
-                <h3 className="font-serif font-bold text-lg text-[#002116] mb-4">
-                  Water Points &amp; Handpump Testing Ledger
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <h3 className="font-serif font-bold text-lg text-[#002116]">
+                    Water Points &amp; Handpump Testing Ledger
+                  </h3>
+                  <span className="text-xs font-mono text-stone-500">
+                    WHO Standard Threshold: 0.05 mg/L Cr(VI)
+                  </span>
+                </div>
                 {sources.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs font-mono">
                       <thead className="bg-[#f2f8f5] text-stone-700 border-b border-stone-200">
                         <tr>
-                          <th className="p-3">Source Name</th>
+                          <th className="p-3">Source Name / ID</th>
                           <th className="p-3">Type</th>
                           <th className="p-3">Coordinates</th>
                           <th className="p-3">Depth</th>
                           <th className="p-3">Observed Cr(VI)</th>
                           <th className="p-3">Safety Status</th>
-                          <th className="p-3">Directions</th>
+                          <th className="p-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stone-100">
                         {sources.map(source => {
                           const sLat = typeof source.coordinates?.lat === 'number' ? source.coordinates.lat : ((source.coordinates as any)?.[0] ?? 26.45);
                           const sLon = typeof source.coordinates?.lon === 'number' ? source.coordinates.lon : ((source.coordinates as any)?.[1] ?? 80.35);
+                          const isSafe = source.status === 'SAFE';
                           return (
                             <tr key={source.id} className="hover:bg-stone-50 transition-colors">
-                              <td className="p-3 font-bold text-[#002116]">{source.name}</td>
+                              <td className="p-3 font-bold text-[#002116]">
+                                <div>{source.name}</div>
+                                <div className="text-[10px] text-stone-400 font-normal">ID: {source.id}</div>
+                              </td>
                               <td className="p-3 text-stone-600">{source.type}</td>
                               <td className="p-3 text-stone-500">{sLat.toFixed(4)}°N, {sLon.toFixed(4)}°E</td>
                               <td className="p-3 text-stone-600">{source.depthMeters ? `${source.depthMeters}m` : '14m'}</td>
                               <td className="p-3">
-                                <span className={`font-bold ${source.status === 'SAFE' ? 'text-emerald-700' : 'text-red-700'}`}>
-                                  {source.contaminant || (source.status === 'SAFE' ? '< 0.01 mg/L' : '0.14 mg/L')}
+                                <span className={`font-bold ${isSafe ? 'text-emerald-700' : 'text-red-700'}`}>
+                                  {source.contaminant || (isSafe ? '< 0.01 mg/L' : '0.14 mg/L')}
                                 </span>
                               </td>
                               <td className="p-3">
                                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                                  source.status === 'SAFE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                                  isSafe ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                                 }`}>
                                   {source.status}
                                 </span>
                               </td>
-                              <td className="p-3">
-                                <a
-                                  href={`https://www.google.com/maps/dir/?api=1&destination=${sLat},${sLon}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[#006492] hover:underline font-bold"
-                                >
-                                  Navigate →
-                                </a>
+                              <td className="p-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Link
+                                    href={`/water-safety?source=${encodeURIComponent(source.id)}`}
+                                    className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded text-[11px] font-bold"
+                                  >
+                                    Safety Lifeline
+                                  </Link>
+                                  <Link
+                                    href={`/map?lat=${sLat}&lon=${sLon}`}
+                                    className="px-2.5 py-1 bg-[#2E8B68]/10 hover:bg-[#2E8B68]/20 text-[#2E8B68] rounded text-[11px] font-bold"
+                                  >
+                                    Locate on GIS
+                                  </Link>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -481,30 +508,133 @@ export default function VillageDigitalTwinPage() {
 
             {activeTab === 'reports' && (
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-serif font-bold text-lg text-[#002116]">Community Observations</h3>
-                  <Link href={`/reports/new?village=${encodeURIComponent(village.name)}`} className="text-xs font-mono font-bold text-[#2E8B68] hover:underline">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                  <div>
+                    <h3 className="font-serif font-bold text-lg text-[#002116]">Community Ground Observations</h3>
+                    <p className="text-xs font-mono text-stone-500">Citizen telemetry and field reports recorded in {village.name}</p>
+                  </div>
+                  <Link 
+                    href={`/reports/new?village=${encodeURIComponent(village.name)}`} 
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2E8B68] hover:bg-[#246e53] text-white rounded-xl text-xs font-mono font-bold transition-colors"
+                  >
                     + Submit New Observation
                   </Link>
                 </div>
                 {reports.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {reports.map(report => (
-                      <div key={report.id} className="p-4 border border-stone-200 rounded-xl bg-stone-50/50 space-y-2">
-                        <div className="flex justify-between items-start">
-                          <span className="font-serif font-bold text-[#002116]">{report.category}</span>
-                          <span className="text-[11px] font-mono text-stone-500">{new Date(report.date).toLocaleDateString()}</span>
+                    {reports.map(report => {
+                      const photo = report.photoUrl || (report as any).photoDataUrl;
+                      const rLat = typeof report.coordinates?.lat === 'number' ? report.coordinates.lat : (report.coordinates as any)?.[0];
+                      const rLon = typeof report.coordinates?.lon === 'number' ? report.coordinates.lon : (report.coordinates as any)?.[1];
+                      return (
+                        <div key={report.id} className="p-4 border border-stone-200 rounded-xl bg-stone-50/60 hover:bg-white hover:shadow-sm transition-all space-y-3">
+                          {photo && (
+                            <div className="relative w-full h-36 rounded-lg overflow-hidden border border-stone-200 bg-stone-100">
+                              <img 
+                                src={photo} 
+                                alt={report.title || report.category} 
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 right-2 px-2 py-0.5 bg-black/70 backdrop-blur-xs text-white rounded text-[10px] font-mono">
+                                Photographic Evidence
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-start gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                                  report.priority === 'Critical' 
+                                    ? 'bg-red-100 text-red-800' 
+                                    : report.priority === 'High' 
+                                    ? 'bg-amber-100 text-amber-800' 
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {report.priority || 'Medium'} Priority
+                                </span>
+                                <span className="text-xs font-mono text-stone-400">#{report.id}</span>
+                              </div>
+                              <h4 className="font-serif font-bold text-base text-[#002116] mt-1">{report.title || report.category}</h4>
+                            </div>
+                            <span className="text-[11px] font-mono text-stone-500 whitespace-nowrap">{new Date(report.date).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-stone-600 text-xs leading-relaxed line-clamp-3">{report.description}</p>
+                          <div className="pt-2 border-t border-stone-200 flex items-center justify-between text-xs font-mono">
+                            <span className="text-stone-500">
+                              Reporter: <strong className="text-stone-700">{report.reporterType || 'Resident'}</strong>
+                            </span>
+                            {rLat && rLon && (
+                              <Link 
+                                href={`/map?lat=${rLat}&lon=${rLon}`}
+                                className="text-[#006492] hover:underline font-bold text-[11px]"
+                              >
+                                View Location on Map →
+                              </Link>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-stone-600 text-xs leading-relaxed">{report.description}</p>
-                        <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-mono">
-                          <span className="text-stone-500">Status: {report.status}</span>
-                          {report.hasPhoto && <span className="text-emerald-700 font-bold">Photo attached</span>}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-8 bg-stone-50 rounded-xl border border-dashed border-stone-300 text-center">
+                    <p className="text-stone-500 font-mono text-sm mb-3">No community reports filed for {village.name} yet.</p>
+                    <Link href={`/reports/new?village=${encodeURIComponent(village.name)}`} className="text-xs font-mono font-bold text-[#2E8B68] hover:underline">
+                      Be the first to log an environmental observation →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'timeline' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="font-serif font-bold text-lg text-[#002116]">Historical Hydrogeological Milestones</h3>
+                    <p className="text-xs font-mono text-stone-500">Discovery, regulatory inspections, community actions &amp; remediation timeline</p>
+                  </div>
+                  <span className="text-xs font-mono bg-stone-100 px-3 py-1.5 rounded-lg border border-stone-200 text-stone-600">
+                    {timeline.length} Documented Milestones
+                  </span>
+                </div>
+                {timeline.length > 0 ? (
+                  <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2 sm:before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#2E8B68]/30">
+                    {timeline.map((event, idx) => (
+                      <div key={event.id || idx} className="relative group">
+                        {/* Timeline Node Icon */}
+                        <div className="absolute -left-6 sm:-left-8 top-1.5 w-4 h-4 rounded-full bg-white border-3 border-[#2E8B68] group-hover:scale-125 transition-transform shadow-xs"></div>
+                        
+                        <div className="bg-stone-50/70 border border-stone-200 rounded-xl p-4 sm:p-5 hover:bg-white hover:shadow-xs transition-all">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-0.5 bg-[#ddf3e7] text-[#002116] rounded text-[11px] font-mono font-bold">
+                                {event.date}
+                              </span>
+                              {event.type && (
+                                <span className="px-2 py-0.5 bg-stone-200 text-stone-700 rounded text-[10px] font-mono uppercase font-bold">
+                                  {event.type}
+                                </span>
+                              )}
+                            </div>
+                            {event.source && (
+                              <span className="text-[11px] font-mono text-[#006492] font-bold">
+                                Source: {event.source}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-serif font-bold text-base text-[#002116] mb-1">
+                            {event.title}
+                          </h4>
+                          <p className="text-stone-600 text-xs font-sans leading-relaxed">
+                            {event.description}
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-stone-500 font-mono text-sm py-4">No community reports filed for this sector yet.</p>
+                  <p className="text-stone-500 font-mono text-sm py-4">No historical milestones cataloged for this village.</p>
                 )}
               </div>
             )}

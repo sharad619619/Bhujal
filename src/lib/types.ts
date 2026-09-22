@@ -165,13 +165,22 @@ export interface CommunityReport {
   waterSourceId?: string;
   coordinates?: { lat: number; lon: number };
   title?: string;
+  locationName?: string;
   reporterName?: string;
   reporterPhone?: string;
+  reporterType?: string;
   urgency?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   actions?: string[];
   resolution?: string;
   timeline?: any[];
   hasPhoto?: boolean;
+  photoUrl?: string;
+  photoDataUrl?: string;
+  verified?: boolean;
+  verificationStatus?: string;
+  evidenceCount?: number;
+  lastUpdated?: string;
   isDemo: boolean;
 }
 

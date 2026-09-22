@@ -283,29 +283,46 @@ export default function RemediationPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {recommendation.candidates.map((candidate, idx) => (
-                <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-serif font-bold text-xl text-emerald-100">{candidate.scientificName}</h4>
-                      <p className="text-xs font-mono text-stone-300">Common: {candidate.commonName}</p>
-                    </div>
-                    <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
-                      Zone {String.fromCharCode(65 + idx)} Candidate
-                    </span>
-                  </div>
+                <div key={idx} className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 space-y-4 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    {(candidate as any).photoUrl && (
+                      <div className="w-full h-44 rounded-xl overflow-hidden relative border border-white/20">
+                        <img 
+                          src={(candidate as any).photoUrl} 
+                          alt={candidate.scientificName}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
+                          <span className="text-[11px] font-mono text-emerald-200">
+                            Botanical Specimen: {candidate.scientificName}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
-                  <p className="text-xs text-stone-200 leading-relaxed">
-                    {candidate.mechanism}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10 text-xs font-mono">
-                    <div>
-                      <span className="text-stone-400 block text-[10px]">BIO-CONCENTRATION FACTOR</span>
-                      <strong className="text-white text-sm">{candidate.bcf}x</strong>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-serif font-bold text-xl text-emerald-100">{candidate.scientificName}</h4>
+                        <p className="text-xs font-mono text-stone-300">Common: {candidate.commonName}</p>
+                      </div>
+                      <span className="px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-400/20 text-emerald-200 border border-emerald-400/30">
+                        Zone {String.fromCharCode(65 + idx)} Candidate
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-stone-400 block text-[10px]">ROOT PENETRATION</span>
-                      <strong className="text-white text-sm">{candidate.rootDepth}</strong>
+
+                    <p className="text-xs text-stone-200 leading-relaxed">
+                      {candidate.mechanism}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10 text-xs font-mono">
+                      <div>
+                        <span className="text-stone-400 block text-[10px]">BIO-CONCENTRATION FACTOR</span>
+                        <strong className="text-white text-sm">{candidate.bcf}x</strong>
+                      </div>
+                      <div>
+                        <span className="text-stone-400 block text-[10px]">ROOT PENETRATION</span>
+                        <strong className="text-white text-sm">{candidate.rootDepth}</strong>
+                      </div>
                     </div>
                   </div>
 
@@ -315,6 +332,23 @@ export default function RemediationPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Scientific Citations & Regulatory Disclaimer */}
+            <div className="mt-8 pt-6 border-t border-white/10 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-stone-300">
+                <span className="font-bold text-emerald-300 uppercase">Scientific Research Citations:</span>
+                <span className="text-[11px] text-stone-400">CSIR-NBRI Lucknow · IIT Kanpur Env Engineering · CPCB In-Situ Protocols</span>
+              </div>
+              <ul className="text-xs text-stone-300 space-y-1 font-mono list-disc list-inside">
+                {recommendation.scientificCitations.map((cite, cIdx) => (
+                  <li key={cIdx}>{cite}</li>
+                ))}
+              </ul>
+              <div className="p-3.5 bg-white/5 rounded-xl border border-white/10 text-[11px] text-stone-300 font-mono">
+                <strong className="text-amber-300 block mb-0.5">Field Validation Protocol:</strong>
+                {recommendation.disclaimer}
+              </div>
             </div>
           </div>
         </section>

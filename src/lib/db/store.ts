@@ -99,6 +99,7 @@ export interface RemediationPrescription {
     bcf: number;
     rootDepth: string;
     care: string;
+    photoUrl?: string;
   }[];
   feasibilityScore: number;
   halfLifeMonths: number;
@@ -474,28 +475,44 @@ class BhujalDataStore {
     description: string;
     villageId?: string;
     waterSourceId?: string;
+    locationName?: string;
     latitude?: number;
     longitude?: number;
     photoDataUrl?: string;
     reporterName?: string;
+    reporterPhone?: string;
+    reporterType?: string;
   }): CommunityReport {
     // Generate unique Bhujal report ID
     const randomDigits = Math.floor(1000 + Math.random() * 9000);
     const newId = `BHL-2026-${randomDigits}`;
 
+    const village = this.getVillageById(data.villageId || 'V-001');
+
     const newReport: CommunityReport = {
       id: newId,
+      title: `${data.category} at ${village?.name || 'Local Community'}`,
       villageId: data.villageId || 'V-001',
       waterSourceId: data.waterSourceId,
-      category: (data.category as any) || 'water',
+      locationName: data.locationName || `${village?.name || 'Village'} Community Zone`,
+      category: data.category,
       description: data.description,
       status: 'Reported',
+      priority: 'High',
       coordinates: {
-        lat: data.latitude || 26.4481,
-        lon: data.longitude || 80.0102,
+        lat: data.latitude || village?.coordinates.lat || 26.4481,
+        lon: data.longitude || village?.coordinates.lon || 80.0102,
       },
       hasPhoto: Boolean(data.photoDataUrl),
+      photoUrl: data.photoDataUrl,
+      photoDataUrl: data.photoDataUrl,
+      reporterName: data.reporterName || 'Concerned Citizen',
+      reporterPhone: data.reporterPhone,
+      reporterType: data.reporterType || 'Resident',
+      verificationStatus: 'Report Logged — Awaiting Field Inspection',
+      evidenceCount: data.photoDataUrl ? 1 : 0,
       date: new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0],
       isDemo: this.mode === 'sample',
     };
 
@@ -503,7 +520,179 @@ class BhujalDataStore {
     this.customReports.unshift(newReport);
     safeSetItem(STORAGE_KEYS.REPORTS, JSON.stringify(this.customReports));
 
+    // Dispatch realtime event so all components/maps update immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('bhujal_data_updated', { detail: { reportId: newId } }));
+    }
+
     return newReport;
+  }
+
+  // -------------------------------------------------------------
+  // Schools & Sensitive Locations
+  // -------------------------------------------------------------
+  public getSchools(): School[] {
+    return demoSchools;
+  }
+
+  public getSchoolsByVillage(villageId: string): School[] {
+    const vId = villageId.toLowerCase();
+    return demoSchools.filter(s => s.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
+  // Contamination Sources
+  // -------------------------------------------------------------
+  public getContaminationSources(): ContaminationSource[] {
+    return demoContaminationSources;
+  }
+
+  // -------------------------------------------------------------
+  // Timeline Events
+  // -------------------------------------------------------------
+  public getTimelineEvents(): TimelineEvent[] {
+    return demoTimelineEvents;
+  }
+
+  public getTimelineEventsByVillage(villageId: string): TimelineEvent[] {
+    const vId = villageId.toLowerCase();
+    return demoTimelineEvents.filter(t => t.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
+  // Soil Samples
+  // -------------------------------------------------------------
+  public getSoilSamples(): SoilSample[] {
+    return demoSoilSamples;
+  }
+
+  public getSoilSamplesByVillage(villageId: string): SoilSample[] {
+    const vId = villageId.toLowerCase();
+    return demoSoilSamples.filter(s => s.villageId.toLowerCase() === vId);
+  }
+
+  // -------------------------------------------------------------
+  // CSV Data Exports (Real Data Center Downloads)
+  // -------------------------------------------------------------
+  public exportReportsCsv(): string {
+    const reports = this.getCommunityReports();
+    const headers = ['Report ID', 'Title', 'Category', 'Village ID', 'Location', 'Water Source ID', 'Latitude', 'Longitude', 'Status', 'Priority', 'Reporter', 'Date', 'Verification'];
+    const rows = reports.map(r => [
+      r.id,
+      `"${(r.title || '').replace(/"/g, '""')}"`,
+      `"${r.category.replace(/"/g, '""')}"`,
+      r.villageId,
+      `"${(r.locationName || '').replace(/"/g, '""')}"`,
+      r.waterSourceId || '',
+      typeof r.coordinates?.lat === 'number' ? r.coordinates.lat : (r.coordinates as any)?.[0] ?? 26.45,
+      typeof r.coordinates?.lon === 'number' ? r.coordinates.lon : (r.coordinates as any)?.[1] ?? 80.35,
+      r.status,
+      r.priority || 'Medium',
+      `"${(r.reporterType || r.reporterName || '').replace(/"/g, '""')}"`,
+      r.date,
+      `"${(r.verificationStatus || '').replace(/"/g, '""')}"`
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportWaterSourcesCsv(): string {
+    const sources = this.getWaterSources();
+    const headers = ['ID', 'Name', 'Village ID', 'Type', 'Latitude', 'Longitude', 'Depth (m)', 'Status', 'Population Served', 'Nearest School Distance (m)', 'Alternative Source ID'];
+    const rows = sources.map(s => [
+      s.id,
+      `"${(s.name || s.id).replace(/"/g, '""')}"`,
+      s.villageId,
+      s.type,
+      s.coordinates.lat,
+      s.coordinates.lon,
+      s.depthMeters || 14,
+      s.status,
+      s.populationServed || 250,
+      s.nearestSchoolDistance || 300,
+      s.alternativeSourceId || ''
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportVillagesCsv(): string {
+    const villages = this.getVillages();
+    const headers = ['ID', 'Name', 'Hindi Name', 'District', 'Block', 'Population', 'Households', 'Latitude', 'Longitude', 'Contamination Status', 'Risk Level'];
+    const rows = villages.map(v => [
+      v.id,
+      `"${v.name}"`,
+      `"${v.hindiName}"`,
+      `"${v.district || 'Kanpur Nagar'}"`,
+      `"${v.block || 'Rania'}"`,
+      v.population,
+      v.households || Math.round(v.population / 5),
+      v.coordinates.lat,
+      v.coordinates.lon,
+      v.contaminationStatus || 'High',
+      v.riskLevel
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportMeasurementsCsv(): string {
+    const measurements = demoMeasurements;
+    const headers = ['ID', 'Source ID', 'Date', 'Parameter', 'Value', 'Unit', 'Method', 'Laboratory ID', 'Verification Status'];
+    const rows = measurements.map(m => [
+      m.id,
+      m.sourceId,
+      m.date,
+      m.parameter,
+      m.value,
+      m.unit,
+      `"${m.method}"`,
+      m.laboratoryId,
+      m.verificationStatus
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportSchoolsCsv(): string {
+    const schools = demoSchools;
+    const headers = ['ID', 'Name', 'Village ID', 'Student Count', 'Nearest Water Source ID', 'Latitude', 'Longitude'];
+    const rows = schools.map(s => [
+      s.id,
+      `"${s.name}"`,
+      s.villageId,
+      s.studentCount,
+      s.nearestWaterSourceId,
+      s.coordinates.lat,
+      s.coordinates.lon
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportContaminationSourcesCsv(): string {
+    const sources = demoContaminationSources;
+    const headers = ['ID', 'Name', 'Type', 'Status', 'Impact Radius (m)', 'Latitude', 'Longitude'];
+    const rows = sources.map(c => [
+      c.id,
+      `"${c.name}"`,
+      c.type,
+      c.status,
+      c.estimatedImpactRadius,
+      c.coordinates.lat,
+      c.coordinates.lon
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+  }
+
+  public exportRemediationProjectsCsv(): string {
+    const projects = demoRemediationProjects;
+    const headers = ['ID', 'Title', 'Village ID', 'Stage', 'Type', 'Lead Agency', 'Status'];
+    const rows = projects.map(p => [
+      p.id,
+      `"${p.title}"`,
+      p.villageId,
+      p.stage,
+      p.type,
+      `"${p.leadAgency || 'State Groundwater Directorate'}"`,
+      p.status || p.stage
+    ]);
+    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
   }
 
   // -------------------------------------------------------------
@@ -602,6 +791,7 @@ class BhujalDataStore {
           bcf: 124,
           rootDepth: '3.5m – 4.2m vertical taproot matrix',
           care: 'Deep trench planting with 2% biochar buffer. Tolerates inundation & pH 5.0–9.5.',
+          photoUrl: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=800&q=80',
         },
         {
           scientificName: 'Brassica juncea',
@@ -610,6 +800,7 @@ class BhujalDataStore {
           bcf: 68,
           rootDepth: '0.8m – 1.2m vadose root zone',
           care: 'Seasonal crop cycle (Rabi). Harvest before flowering to prevent secondary dispersal.',
+          photoUrl: 'https://images.unsplash.com/photo-1508873696983-2df5703bc20d?auto=format&fit=crop&w=800&q=80',
         },
       ],
       feasibilityScore,

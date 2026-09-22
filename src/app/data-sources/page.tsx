@@ -164,6 +164,53 @@ export default function DataCenterPage() {
     document.body.removeChild(link);
   };
 
+  // Download real platform datasets as CSV
+  const handleDownloadDataset = (type: 'reports' | 'waterSources' | 'measurements' | 'villages' | 'schools' | 'contamination' | 'remediation') => {
+    const db = getDb();
+    let csvContent = '';
+    let fileName = '';
+
+    switch (type) {
+      case 'reports':
+        csvContent = db.exportReportsCsv();
+        fileName = 'bhujal_community_reports.csv';
+        break;
+      case 'waterSources':
+        csvContent = db.exportWaterSourcesCsv();
+        fileName = 'bhujal_water_sources.csv';
+        break;
+      case 'measurements':
+        csvContent = db.exportMeasurementsCsv();
+        fileName = 'bhujal_measurements.csv';
+        break;
+      case 'villages':
+        csvContent = db.exportVillagesCsv();
+        fileName = 'bhujal_villages.csv';
+        break;
+      case 'schools':
+        csvContent = db.exportSchoolsCsv();
+        fileName = 'bhujal_schools.csv';
+        break;
+      case 'contamination':
+        csvContent = db.exportContaminationSourcesCsv();
+        fileName = 'bhujal_contamination_sources.csv';
+        break;
+      case 'remediation':
+        csvContent = db.exportRemediationProjectsCsv();
+        fileName = 'bhujal_remediation_projects.csv';
+        break;
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -330,6 +377,54 @@ export default function DataCenterPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        {/* Real Platform CSV Data Exports */}
+        <section className="bg-white rounded-2xl p-6 lg:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-4">
+            <div>
+              <span className="text-xs font-mono text-[#006492] font-bold uppercase tracking-wider">
+                OPEN DATA REPOSITORY
+              </span>
+              <h2 className="text-2xl font-serif text-[#002116] font-bold">Export Platform Datasets (CSV)</h2>
+              <p className="text-xs sm:text-sm text-stone-600">
+                Direct export of current platform telemetry, laboratory measurements, citizen ground reports, and spatial coordinates.
+              </p>
+            </div>
+            <span className="text-xs font-mono text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg font-bold">
+              UTF-8 CSV · Geo-referenced
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { id: 'reports', title: 'Community Reports', sub: '28+ Ground citizen observations & evidence', ext: 'community_reports.csv' },
+              { id: 'waterSources', title: 'Water Points & Wells', sub: '35 Monitored tubewells & handpumps', ext: 'water_sources.csv' },
+              { id: 'measurements', title: 'Cr(VI) Lab Measurements', sub: '150+ Historical lab test records', ext: 'measurements.csv' },
+              { id: 'villages', title: 'Village Panchayats', sub: 'Demographic profiles & risk metrics', ext: 'villages.csv' },
+              { id: 'schools', title: 'Schools & Sensitive Zones', sub: '10 Enrolled schools near aquifers', ext: 'schools.csv' },
+              { id: 'contamination', title: 'Contamination Sources', sub: 'Legacy tannery sludge & industrial drains', ext: 'contamination_sources.csv' },
+              { id: 'remediation', title: 'Remediation Projects', sub: 'Active pilot bio-wetlands & PRB trenches', ext: 'remediation_projects.csv' },
+            ].map((item) => (
+              <div key={item.id} className="p-4 rounded-xl border border-stone-200 bg-stone-50/60 hover:bg-white hover:shadow-xs transition-all flex flex-col justify-between space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <FileSpreadsheet className="w-4 h-4 text-[#2E8B68]" />
+                    <span className="text-[10px] font-mono text-stone-400">CSV</span>
+                  </div>
+                  <h4 className="font-serif font-bold text-sm text-[#002116]">{item.title}</h4>
+                  <p className="text-[11px] text-stone-500 mt-1 leading-snug">{item.sub}</p>
+                </div>
+                <button
+                  onClick={() => handleDownloadDataset(item.id as any)}
+                  className="w-full py-2 bg-white hover:bg-stone-100 text-[#002116] border border-stone-300 rounded-lg text-xs font-mono font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#006492]" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            ))}
           </div>
         </section>
 

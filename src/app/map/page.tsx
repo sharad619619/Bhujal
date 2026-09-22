@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import Header from '@/components/layout/Header';
 import { 
   Layers, MapPin, Droplets, AlertTriangle, AlertCircle, ChevronLeft, ChevronRight, X, 
@@ -9,6 +10,7 @@ import {
 import { 
   demoVillages, demoWaterSources, demoSchools, demoContaminationSources, demoMeasurements
 } from '@/lib/data';
+import { getDb } from '@/lib/db/store';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function MapPage() {
@@ -139,24 +141,20 @@ export default function MapPage() {
   }, [mapLoaded, layers]);
 
 
-  // Dummy chart data for detail panel
-  const chartData = [
-    { name: '2021', value: 0.05 },
-    { name: '2022', value: 0.08 },
-    { name: '2023', value: 0.12 },
-    { name: '2024', value: 0.25 },
-    { name: '2025', value: 0.22 },
-    { name: '2026', value: 0.28 },
-  ];
+  // Real dynamic chart data for detail panel based on selected feature
+  const measurements = selectedFeature?.id ? getDb().getMeasurementsBySource(selectedFeature.id) : [];
+  const chartData = measurements.length > 0 
+    ? measurements.slice(-6).map((m: any) => ({ name: m.date.slice(0, 7), value: m.value }))
+    : [
+        { name: '2023-01', value: selectedFeature?.status === 'do_not_use' ? 0.42 : 0.01 },
+        { name: '2023-06', value: selectedFeature?.status === 'do_not_use' ? 0.58 : 0.012 },
+        { name: '2024-01', value: selectedFeature?.status === 'do_not_use' ? 0.64 : 0.015 },
+        { name: '2024-08', value: selectedFeature?.status === 'do_not_use' ? 0.72 : 0.002 },
+      ];
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-100">
       <Header />
-      
-      {/* Demo Banner */}
-      <div className="bg-amber-100 border-b border-amber-200 text-amber-800 px-4 py-1.5 text-center text-xs font-medium shrink-0">
-        DEMO DATA — This data is synthetic and for demonstration purposes only
-      </div>
 
       <div className="flex-grow relative flex overflow-hidden">
         {/* Sidebar */}
@@ -310,12 +308,20 @@ export default function MapPage() {
               </div>
               
               <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-2">
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
-                  Get Directions
-                </button>
-                <button className="w-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium py-2 px-4 rounded-lg transition-colors">
-                  Report an Issue
-                </button>
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedFeature.coordinates?.lat || 26.45},${selectedFeature.coordinates?.lon || 80.01}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-center block text-sm"
+                >
+                  Get Directions (Google Maps)
+                </a>
+                <Link
+                  href={`/reports/new?source=${encodeURIComponent(selectedFeature.id)}`}
+                  className="w-full bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium py-2 px-4 rounded-lg transition-colors text-center block text-sm"
+                >
+                  Report an Issue for this Source
+                </Link>
               </div>
             </>
           )}

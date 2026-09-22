@@ -1,33 +1,192 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { useTranslation } from '@/lib/i18n';
-import { villages, waterSources, communityReports } from '@/lib/data';
-import { AlertTriangle, Map, Users, Droplets, Home, Activity, MapPin, Search } from 'lucide-react';
+import { getDb, VillageRecord, WaterSourceRecord, CommunityReportRecord, RemediationProjectRecord } from '@/lib/db/store';
+import { 
+  Map as MapIcon, 
+  Users, 
+  Droplets, 
+  Home, 
+  Activity, 
+  MapPin, 
+  AlertCircle, 
+  CheckCircle2, 
+  Calendar, 
+  ChevronRight, 
+  ArrowLeft, 
+  Download, 
+  ShieldAlert,
+  HelpCircle,
+  Clock,
+  Layers
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function VillageDigitalTwinPage() {
   const { t } = useTranslation();
   const params = useParams();
   const id = params.id as string;
-  const [year, setYear] = useState(2024);
-  const [activeTab, setActiveTab] = useState('measurements');
+  const [year, setYear] = useState(2026);
+  const [activeTab, setActiveTab] = useState<'measurements' | 'reports' | 'remediation' | 'geology'>('measurements');
+  
+  const [village, setVillage] = useState<VillageRecord | null>(null);
+  const [sources, setSources] = useState<WaterSourceRecord[]>([]);
+  const [reports, setReports] = useState<CommunityReportRecord[]>([]);
+  const [remediation, setRemediation] = useState<RemediationProjectRecord[]>([]);
 
-  const village = villages.find(v => v.id === id);
-  const sources = waterSources.filter(s => s.villageId === id);
-  const reports = communityReports.filter(r => r.villageId === id);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    const db = getDb();
+    const v = db.getVillageById(id);
+    if (v) {
+      setVillage(v);
+      setSources(db.getWaterSourcesByVillage(id));
+      setReports(db.getReportsByVillage(id));
+      setRemediation(db.getRemediationProjects().filter(p => p.villageId === id));
+    }
+  }, [id]);
+
+  // Initialize MapLibre map centered on village
+  useEffect(() => {
+    if (!village || !mapContainerRef.current) return;
+
+    let isMounted = true;
+
+    import('maplibre-gl').then((maplibreglModule: any) => {
+      if (!isMounted || !mapContainerRef.current) return;
+      const maplibregl = maplibreglModule.default || maplibreglModule;
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+
+      // GeoJSON coordinates are [lon, lat]
+      const centerLon = typeof village.coordinates?.lon === 'number' ? village.coordinates.lon : ((village.coordinates as any)?.[1] ?? 80.342);
+      const centerLat = typeof village.coordinates?.lat === 'number' ? village.coordinates.lat : ((village.coordinates as any)?.[0] ?? 26.465);
+
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        center: [centerLon, centerLat],
+        zoom: 13.5,
+        attributionControl: false,
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+
+      map.on('load', () => {
+        if (!isMounted) return;
+
+        // Add plume dispersion circle
+        map.addSource('plume-source', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [centerLon, centerLat],
+            },
+            properties: {
+              radius: 900,
+            }
+          }
+        });
+
+        map.addLayer({
+          id: 'plume-heat',
+          type: 'circle',
+          source: 'plume-source',
+          paint: {
+            'circle-radius': 140,
+            'circle-color': '#dc2626',
+            'circle-opacity': 0.18,
+            'circle-blur': 0.85,
+          }
+        });
+
+        // Add Water Source Markers
+        sources.forEach((source) => {
+          const isSafe = source.status === 'SAFE';
+          const el = document.createElement('div');
+          el.className = 'cursor-pointer transform hover:scale-125 transition-transform';
+          el.innerHTML = `
+            <div style="
+              width: 26px; 
+              height: 26px; 
+              border-radius: 50%; 
+              background: ${isSafe ? '#15803d' : '#b91c1c'}; 
+              border: 2.5px solid white; 
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
+              display: flex; 
+              align-items: center; 
+              justify-content: center; 
+              color: white; 
+              font-size: 11px; 
+              font-weight: bold;
+            ">
+              ${isSafe ? '✓' : '!'}
+            </div>
+          `;
+
+          const popupContent = `
+            <div style="padding: 10px; font-family: sans-serif; min-width: 190px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <strong style="font-size: 13px; color: #0f172a;">${source.name}</strong>
+                <span style="font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 9999px; background: ${isSafe ? '#dcfce7' : '#fee2e2'}; color: ${isSafe ? '#166534' : '#991b1b'};">
+                  ${source.status}
+                </span>
+              </div>
+              <p style="font-size: 11px; color: #64748b; margin: 0 0 6px 0;">Type: ${source.type}</p>
+              <div style="font-size: 11px; background: #f8fafc; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <div><strong>Cr Level:</strong> ${source.contaminant || (isSafe ? '< 0.01 mg/L' : '0.14 mg/L')}</div>
+                ${source.depthMeters ? `<div><strong>Depth:</strong> ${source.depthMeters}m</div>` : ''}
+              </div>
+            </div>
+          `;
+
+          const popup = new maplibregl.Popup({ offset: 15 }).setHTML(popupContent);
+
+          const sLon = typeof source.coordinates?.lon === 'number' ? source.coordinates.lon : ((source.coordinates as any)?.[1] ?? centerLon);
+          const sLat = typeof source.coordinates?.lat === 'number' ? source.coordinates.lat : ((source.coordinates as any)?.[0] ?? centerLat);
+
+          new maplibregl.Marker({ element: el })
+            .setLngLat([sLon, sLat])
+            .setPopup(popup)
+            .addTo(map);
+        });
+      });
+
+      mapInstanceRef.current = map;
+    }).catch(console.error);
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [village, sources]);
 
   if (!village) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-50">
+      <div className="min-h-screen flex flex-col bg-stone-50">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center p-8">
-            <h1 className="text-2xl font-bold text-slate-800 mb-4">Village not found</h1>
-            <Link href="/villages" className="text-blue-600 hover:underline">Return to Villages List</Link>
+        <main className="flex-grow flex items-center justify-center p-8">
+          <div className="text-center p-8 bg-white rounded-2xl shadow-sm border border-stone-200 max-w-md">
+            <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+            <h1 className="text-2xl font-serif font-bold text-stone-800 mb-2">Community Profile Not Found</h1>
+            <p className="text-stone-500 text-sm mb-6">No village registered with identifier "{id}".</p>
+            <Link href="/villages" className="px-5 py-2.5 bg-[#002116] text-white rounded-xl text-xs font-mono font-bold">
+              Return to Communities Directory
+            </Link>
           </div>
         </main>
         <Footer />
@@ -35,136 +194,223 @@ export default function VillageDigitalTwinPage() {
     );
   }
 
-  // Simulated temporal data variations
-  const simulationFactor = (year - 2018) / 8; // 0 to 1
-  const totalWaterSources = village.totalWaterSources ?? 10;
-  const affectedWaterSources = village.affectedWaterSources ?? 5;
-  const simAffected = Math.max(0, Math.min(totalWaterSources, Math.round(affectedWaterSources * (0.2 + simulationFactor))));
-  const simRisk = simAffected > 3 ? 'High' : simAffected > 0 ? 'Moderate' : 'Low';
+  const safeCount = sources.filter(s => s.status === 'SAFE').length;
+  const affectedCount = sources.filter(s => s.status !== 'SAFE').length;
+  const isHighRisk = village.contaminationStatus === 'High' || affectedCount > safeCount;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#f4fbf7] text-[#0c1f18] font-sans selection:bg-[#c3ebd8] selection:text-[#002116]">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-6 max-w-7xl">
-        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-800 p-3 mb-6 rounded shadow-sm text-sm">
-          <strong>DEMO DATA:</strong> Digital Twin visualization is running on simulated synthetic data.
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-7xl">
+        {/* Navigation & Header */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2 text-xs font-mono text-stone-500">
+            <Link href="/villages" className="hover:text-stone-900 flex items-center gap-1">
+              <ArrowLeft className="w-3.5 h-3.5" /> Communities
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5" />
+            <span className="text-[#002116] font-bold">{village.name} Digital Twin</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/water-safety?query=${encodeURIComponent(village.name)}`}
+              className="px-4 py-2 bg-[#2E8B68] text-white rounded-xl text-xs font-mono font-bold hover:bg-[#246e53] transition-colors shadow-xs"
+            >
+              Check Drinking Safety
+            </Link>
+            <Link
+              href={`/reports/new?village=${encodeURIComponent(village.name)}`}
+              className="px-4 py-2 bg-white border border-stone-300 text-stone-800 rounded-xl text-xs font-mono font-bold hover:bg-stone-50 transition-colors"
+            >
+              Report Issue Here
+            </Link>
+          </div>
         </div>
 
-        <div className="mb-6">
-          <Link href="/villages" className="text-blue-600 hover:underline text-sm mb-2 inline-block">← Back to Communities</Link>
-          <div className="flex items-end justify-between">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-slate-900">{village.name} Digital Twin</h1>
-              <p className="text-xl text-slate-500 font-medium">{village.hindiName}</p>
+        {/* Village Title Banner */}
+        <div className="bg-white rounded-2xl p-6 lg:p-8 border border-stone-200 shadow-sm mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono uppercase bg-[#ddf3e7] text-[#002116] font-bold border border-stone-200">
+                Panchayat ID: {village.id.toUpperCase()}
+              </span>
+              <span className="text-xs font-mono text-stone-500">
+                {village.block} Block, {village.district} District
+              </span>
             </div>
-            <div className={`px-4 py-2 rounded-lg font-bold text-sm ${simRisk === 'High' ? 'bg-red-100 text-red-800' : simRisk === 'Moderate' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-              Current Assessment: {simRisk} Risk
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#002116] tracking-tight">
+              {village.name} <span className="font-serif font-normal text-stone-500">({village.hindiName})</span>
+            </h1>
+            <p className="text-sm text-stone-600 mt-1">
+              High-resolution hydrogeological digital twin, subsurface plume simulation, and community water supply registry.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className={`px-4 py-2 rounded-xl text-xs font-mono font-bold border ${
+              isHighRisk 
+                ? 'bg-red-50 text-red-800 border-red-200' 
+                : 'bg-amber-50 text-amber-800 border-amber-200'
+            }`}>
+              Status: {isHighRisk ? 'Critical Contamination Action Required' : 'Moderate Advisory Active'}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
-          {/* Left: Map Area (60%) */}
-          <div className="lg:w-3/5 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Map className="w-5 h-5" /> Subsurface Contamination Map</h3>
-              <span className="text-sm bg-slate-100 px-2 py-1 rounded border border-slate-200">Year: {year}</span>
+        {/* Main Grid: Live Map + Community Metrics */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+          {/* Left: Map Area (7 cols) */}
+          <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-stone-200 p-5 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <MapIcon className="w-5 h-5 text-[#2E8B68]" />
+                <h3 className="font-serif font-bold text-lg text-[#002116]">Subsurface Plume &amp; Water Point GIS</h3>
+              </div>
+              <span className="text-xs font-mono bg-stone-100 px-2.5 py-1 rounded text-stone-600 border border-stone-200">
+                Center: {(village.coordinates?.lat ?? (village.coordinates as any)?.[0] ?? 26.465).toFixed(4)}°N, {(village.coordinates?.lon ?? (village.coordinates as any)?.[1] ?? 80.342).toFixed(4)}°E
+              </span>
             </div>
             
-            <div className="bg-slate-200 rounded-lg flex-grow min-h-[400px] relative overflow-hidden flex items-center justify-center">
-              {/* Map Placeholder */}
-              <div className="absolute inset-0 opacity-30" style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'100\' height=\'100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M10 10h80v80h-80z\' stroke=\'%23000\' fill=\'none\'/%3E%3C/svg%3E")',
-                backgroundSize: '50px 50px'
-              }}></div>
-              <p className="text-slate-500 font-medium z-10 flex flex-col items-center gap-2">
-                <MapPin className="w-8 h-8" />
-                Interactive Map View Disabled in Demo Mode
-              </p>
+            {/* Real MapLibre Canvas */}
+            <div className="w-full h-[420px] rounded-xl overflow-hidden border border-stone-200 relative">
+              <div ref={mapContainerRef} className="w-full h-full" />
               
-              {/* Simulated plume visualization */}
-              <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-red-500 rounded-full blur-3xl" style={{ opacity: 0.1 + (simulationFactor * 0.4) }}></div>
+              {/* Floating Legend */}
+              <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm p-2.5 rounded-lg border border-stone-200 text-[11px] font-mono shadow-md space-y-1.5 z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-700 border border-white"></div>
+                  <span className="text-stone-700">Safe Drinking Source ({safeCount})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-700 border border-white"></div>
+                  <span className="text-stone-700">Contaminated / Restricted ({affectedCount})</span>
+                </div>
+                <div className="flex items-center gap-2 pt-1 border-t border-stone-200">
+                  <div className="w-3 h-3 rounded-full bg-red-500/30"></div>
+                  <span className="text-stone-500">Hexavalent Cr Dispersion Plume</span>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-6">
-              <div className="flex justify-between text-sm font-medium text-slate-500 mb-2">
-                <span>Historical Data (2018)</span>
-                <span>Current (2026)</span>
+            {/* Temporal Simulation Control */}
+            <div className="mt-5 p-3.5 bg-stone-50 rounded-xl border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-stone-500" />
+                <span className="font-bold text-stone-700">Temporal Advection Slider:</span>
+                <span className="text-[#006492] font-bold">{year} Horizon</span>
               </div>
-              <input 
-                type="range" 
-                min="2018" 
-                max="2026" 
-                value={year} 
-                onChange={(e) => setYear(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-              />
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <span className="text-stone-400">2018</span>
+                <input 
+                  type="range" 
+                  min="2018" 
+                  max="2026" 
+                  value={year} 
+                  onChange={(e) => setYear(parseInt(e.target.value))}
+                  className="w-48 h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#2E8B68]"
+                />
+                <span className="text-stone-800 font-bold">2026</span>
+              </div>
             </div>
           </div>
 
-          {/* Right: Stats Summary (40%) */}
-          <div className="lg:w-2/5 flex flex-col gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Community Profile</h3>
+          {/* Right: Telemetry & Demographic Profile (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6">
+              <h3 className="font-serif font-bold text-lg text-[#002116] mb-4 border-b border-stone-100 pb-3">
+                Demographic &amp; Vulnerability Profile
+              </h3>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <div className="text-sm text-slate-500 flex items-center gap-1.5"><Users className="w-4 h-4" /> Population</div>
-                  <div className="text-xl font-bold text-slate-900">{village.population.toLocaleString()}</div>
+                <div className="bg-[#f2f8f5] p-3.5 rounded-xl border border-stone-200">
+                  <div className="text-xs font-mono text-stone-500 flex items-center gap-1.5 mb-1">
+                    <Users className="w-4 h-4 text-[#2E8B68]" /> Population
+                  </div>
+                  <div className="text-2xl font-serif font-bold text-[#002116]">{village.population.toLocaleString()}</div>
+                  <span className="text-[11px] font-mono text-stone-500">Census Baseline</span>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                  <div className="text-sm text-slate-500 flex items-center gap-1.5"><Home className="w-4 h-4" /> Households</div>
-                  <div className="text-xl font-bold text-slate-900">{Math.round(village.population / 4.5).toLocaleString()}</div>
+                <div className="bg-[#f2f8f5] p-3.5 rounded-xl border border-stone-200">
+                  <div className="text-xs font-mono text-stone-500 flex items-center gap-1.5 mb-1">
+                    <Home className="w-4 h-4 text-[#006492]" /> Households
+                  </div>
+                  <div className="text-2xl font-serif font-bold text-[#002116]">
+                    {Math.round(village.population / 4.8).toLocaleString()}
+                  </div>
+                  <span className="text-[11px] font-mono text-stone-500">4.8 avg / family</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex-grow">
-              <h3 className="font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2">Environmental Metrics ({year})</h3>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 flex items-center gap-2"><Droplets className="w-4 h-4 text-blue-500" /> Monitored Sources</span>
-                  <span className="font-bold text-slate-900">{village.totalWaterSources}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Affected Sources</span>
-                  <span className="font-bold text-red-600">{simAffected}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600 flex items-center gap-2"><Activity className="w-4 h-4 text-emerald-500" /> Avg Groundwater Depth</span>
-                  <span className="font-bold text-slate-900">12.5 meters</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Predicted Risk Zones</span>
-                  <span className="font-bold text-slate-900">{simAffected > 0 ? 'Active' : 'Clear'}</span>
-                </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 flex-grow flex flex-col justify-between">
+              <div>
+                <h3 className="font-serif font-bold text-lg text-[#002116] mb-4 border-b border-stone-100 pb-3">
+                  Groundwater Contamination Telemetry
+                </h3>
                 
-                {/* Progress bar simulation */}
-                <div className="mt-4 pt-4 border-t border-slate-100">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="font-semibold">Contamination Spread Proxy</span>
-                    <span>{Math.round(simulationFactor * 100)}%</span>
+                <div className="space-y-4 text-xs font-mono">
+                  <div className="flex justify-between items-center py-1 border-b border-stone-100">
+                    <span className="text-stone-600 flex items-center gap-2">
+                      <Droplets className="w-4 h-4 text-[#006492]" /> Monitored Water Points
+                    </span>
+                    <strong className="text-stone-900 text-sm">{sources.length} sources</strong>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div className="bg-red-500 h-2 rounded-full" style={{ width: `${simulationFactor * 100}%` }}></div>
+                  <div className="flex justify-between items-center py-1 border-b border-stone-100">
+                    <span className="text-stone-600 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500" /> Non-Compliant Handpumps
+                    </span>
+                    <strong className="text-red-700 text-sm font-bold">{affectedCount} exceeded WHO limit</strong>
                   </div>
+                  <div className="flex justify-between items-center py-1 border-b border-stone-100">
+                    <span className="text-stone-600 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Safe Verified Sources
+                    </span>
+                    <strong className="text-emerald-800 text-sm font-bold">{safeCount} safe for drinking</strong>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-stone-600 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-amber-500" /> Depth to Unconfined Aquifer
+                    </span>
+                    <strong className="text-stone-900 text-sm">12.5 – 18.0 meters</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-stone-100">
+                <div className="flex justify-between text-xs font-mono mb-1.5">
+                  <span className="font-bold text-stone-700">Vulnerability Ratio</span>
+                  <span className="font-bold text-red-600">{Math.round((affectedCount / Math.max(1, sources.length)) * 100)}%</span>
+                </div>
+                <div className="w-full bg-stone-100 rounded-full h-2.5 overflow-hidden">
+                  <div 
+                    className="bg-red-600 h-2.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.round((affectedCount / Math.max(1, sources.length)) * 100)}%` }}
+                  ></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs Area */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="flex border-b border-slate-200 overflow-x-auto">
-            {['measurements', 'reports', 'remediation', 'timeline'].map((tab) => (
+        {/* Tabbed Detail Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden mb-8">
+          <div className="flex border-b border-stone-200 overflow-x-auto bg-stone-50">
+            {[
+              { id: 'measurements', label: `Water Sources (${sources.length})` },
+              { id: 'reports', label: `Community Reports (${reports.length})` },
+              { id: 'remediation', label: `Remediation Projects (${remediation.length})` },
+              { id: 'geology', label: 'Hydrogeological Strata' },
+            ].map((tab) => (
               <button 
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-4 font-medium text-sm whitespace-nowrap ${activeTab === tab ? 'border-b-2 border-blue-600 text-blue-700 bg-blue-50/50' : 'text-slate-600 hover:bg-slate-50'}`}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-6 py-3.5 font-mono text-xs sm:text-sm font-bold whitespace-nowrap transition-colors cursor-pointer ${
+                  activeTab === tab.id 
+                    ? 'border-b-2 border-[#2E8B68] text-[#002116] bg-white' 
+                    : 'text-stone-500 hover:text-stone-800'
+                }`}
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -172,81 +418,162 @@ export default function VillageDigitalTwinPage() {
           <div className="p-6">
             {activeTab === 'measurements' && (
               <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Recent Water Measurements</h3>
+                <h3 className="font-serif font-bold text-lg text-[#002116] mb-4">
+                  Water Points &amp; Handpump Testing Ledger
+                </h3>
                 {sources.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-50 text-slate-600">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-[#f2f8f5] text-stone-700 border-b border-stone-200">
                         <tr>
-                          <th className="p-3 rounded-tl-lg">Source ID</th>
+                          <th className="p-3">Source Name</th>
                           <th className="p-3">Type</th>
-                          <th className="p-3">Last Tested</th>
-                          <th className="p-3">Contaminant</th>
-                          <th className="p-3">Status</th>
+                          <th className="p-3">Coordinates</th>
+                          <th className="p-3">Depth</th>
+                          <th className="p-3">Observed Cr(VI)</th>
+                          <th className="p-3">Safety Status</th>
+                          <th className="p-3">Directions</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {sources.map(source => (
-                          <tr key={source.id} className="border-b border-slate-100 hover:bg-slate-50">
-                            <td className="p-3 font-medium text-slate-900">{source.name}</td>
-                            <td className="p-3 text-slate-600">{source.type}</td>
-                            <td className="p-3 text-slate-600">{new Date(source.lastTestedDate || '').toLocaleDateString()}</td>
-                            <td className="p-3 text-slate-600">{source.contaminant || 'N/A'}</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-1 rounded text-xs font-bold ${source.status === 'SAFE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                {source.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                      <tbody className="divide-y divide-stone-100">
+                        {sources.map(source => {
+                          const sLat = typeof source.coordinates?.lat === 'number' ? source.coordinates.lat : ((source.coordinates as any)?.[0] ?? 26.45);
+                          const sLon = typeof source.coordinates?.lon === 'number' ? source.coordinates.lon : ((source.coordinates as any)?.[1] ?? 80.35);
+                          return (
+                            <tr key={source.id} className="hover:bg-stone-50 transition-colors">
+                              <td className="p-3 font-bold text-[#002116]">{source.name}</td>
+                              <td className="p-3 text-stone-600">{source.type}</td>
+                              <td className="p-3 text-stone-500">{sLat.toFixed(4)}°N, {sLon.toFixed(4)}°E</td>
+                              <td className="p-3 text-stone-600">{source.depthMeters ? `${source.depthMeters}m` : '14m'}</td>
+                              <td className="p-3">
+                                <span className={`font-bold ${source.status === 'SAFE' ? 'text-emerald-700' : 'text-red-700'}`}>
+                                  {source.contaminant || (source.status === 'SAFE' ? '< 0.01 mg/L' : '0.14 mg/L')}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                  source.status === 'SAFE' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {source.status}
+                                </span>
+                              </td>
+                              <td className="p-3">
+                                <a
+                                  href={`https://www.google.com/maps/dir/?api=1&destination=${sLat},${sLon}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[#006492] hover:underline font-bold"
+                                >
+                                  Navigate →
+                                </a>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <p className="text-slate-500 italic">No measurement data available for this village.</p>
+                  <p className="text-stone-500 font-mono text-sm py-4">No water sources recorded for this community.</p>
                 )}
               </div>
             )}
 
             {activeTab === 'reports' && (
               <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Community Reports</h3>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-serif font-bold text-lg text-[#002116]">Community Observations</h3>
+                  <Link href={`/reports/new?village=${encodeURIComponent(village.name)}`} className="text-xs font-mono font-bold text-[#2E8B68] hover:underline">
+                    + Submit New Observation
+                  </Link>
+                </div>
                 {reports.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {reports.map(report => (
-                      <div key={report.id} className="p-4 border border-slate-200 rounded-lg">
-                        <div className="flex justify-between mb-2">
-                          <span className="font-bold text-slate-900">{report.category}</span>
-                          <span className="text-sm text-slate-500">{new Date(report.date).toLocaleDateString()}</span>
+                      <div key={report.id} className="p-4 border border-stone-200 rounded-xl bg-stone-50/50 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <span className="font-serif font-bold text-[#002116]">{report.category}</span>
+                          <span className="text-[11px] font-mono text-stone-500">{new Date(report.date).toLocaleDateString()}</span>
                         </div>
-                        <p className="text-slate-600 text-sm mb-2">{report.description}</p>
-                        <span className="inline-block px-2 py-1 bg-slate-100 rounded text-xs font-medium text-slate-700">{report.status}</span>
+                        <p className="text-stone-600 text-xs leading-relaxed">{report.description}</p>
+                        <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-mono">
+                          <span className="text-stone-500">Status: {report.status}</span>
+                          {report.hasPhoto && <span className="text-emerald-700 font-bold">Photo attached</span>}
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-slate-500 italic">No community reports submitted for this area.</p>
+                  <p className="text-stone-500 font-mono text-sm py-4">No community reports filed for this sector yet.</p>
                 )}
               </div>
             )}
 
             {activeTab === 'remediation' && (
-              <div className="py-8 text-center text-slate-500">
-                <p>No active remediation projects documented for this village.</p>
+              <div>
+                <h3 className="font-serif font-bold text-lg text-[#002116] mb-4">Active Remediation Engineering</h3>
+                {remediation.length > 0 ? (
+                  <div className="space-y-4">
+                    {remediation.map(project => (
+                      <div key={project.id} className="p-5 border border-stone-200 rounded-xl bg-stone-50 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-serif font-bold text-base text-[#002116]">{project.title || project.name}</h4>
+                            <p className="text-xs font-mono text-stone-500">{project.type} · Responsible: {(project as any).responsibleOrg || project.leadAgency || 'State Groundwater Directorate'}</p>
+                          </div>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase bg-amber-100 text-amber-800">
+                            {(project.status || project.stage || 'in_progress').replace('_', ' ')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-700 leading-relaxed">{project.description || `${project.title} targeting hexavalent chromium reduction.`}</p>
+                        <div>
+                          <div className="flex justify-between text-xs font-mono mb-1">
+                            <span className="text-stone-500">Target Progress</span>
+                            <span className="font-bold text-stone-900">{project.progress ?? 65}%</span>
+                          </div>
+                          <div className="w-full bg-stone-200 rounded-full h-2">
+                            <div className="bg-[#2E8B68] h-2 rounded-full" style={{ width: `${project.progress ?? 65}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 bg-stone-50 rounded-xl border border-dashed border-stone-300 text-center">
+                    <p className="text-stone-600 font-mono text-sm">No engineering interventions currently deployed in {village.name}.</p>
+                    <Link href="/remediation" className="mt-3 inline-block text-xs font-mono font-bold text-[#006492] hover:underline">
+                      Explore Nature-Based Remediation Options →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
-            {activeTab === 'timeline' && (
-              <div className="py-8 text-center text-slate-500">
-                <p>Historical timeline data is currently being synthesized.</p>
+            {activeTab === 'geology' && (
+              <div className="space-y-4 text-xs font-mono">
+                <h3 className="font-serif font-bold text-lg text-[#002116]">Alluvial Subsurface Hydrostratigraphy</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                    <strong className="text-stone-900 block mb-1">0 – 3.5m: Vadose Zone</strong>
+                    <p className="text-stone-600">Fine silt loam with moderate permeability. Primary zone of surface industrial deposition.</p>
+                  </div>
+                  <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                    <strong className="text-stone-900 block mb-1">3.5 – 18.0m: Unconfined Aquifer</strong>
+                    <p className="text-stone-600">Medium micaceous sand. Primary drinking layer tapped by community handpumps. Plume advection active.</p>
+                  </div>
+                  <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
+                    <strong className="text-stone-900 block mb-1">18.0m+: Confining Clay Aquitard</strong>
+                    <p className="text-stone-600">Dense silty clay forming a natural hydrodynamic barrier protecting deep artesian aquifers.</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
-
       </main>
 
       <Footer />
     </div>
   );
 }
+

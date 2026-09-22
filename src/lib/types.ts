@@ -53,6 +53,7 @@ export interface WaterSource {
   isDemo: boolean;
   // Additional fields
   name?: string;
+  depthMeters?: number;
   lastVerified?: string;
   lastTestedDate?: string;
   contaminant?: string;
@@ -140,6 +141,13 @@ export interface RemediationProject {
   villageId: string;
   stage: string;
   type: string;
+  name?: string;
+  status?: string;
+  description?: string;
+  budget?: string;
+  targetReduction?: string;
+  leadAgency?: string;
+  progress?: number;
   startDate?: string;
   endDate?: string;
   baselineMeasurementId?: string;
@@ -154,6 +162,15 @@ export interface CommunityReport {
   category: string;
   status: string;
   description: string;
+  waterSourceId?: string;
+  coordinates?: { lat: number; lon: number };
+  title?: string;
+  reporterName?: string;
+  reporterPhone?: string;
+  urgency?: string;
+  actions?: string[];
+  resolution?: string;
+  timeline?: any[];
   hasPhoto?: boolean;
   isDemo: boolean;
 }

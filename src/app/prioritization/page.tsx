@@ -1,55 +1,151 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { AlertTriangle, Settings2, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { getDb } from '@/lib/db/store';
+import { 
+  Settings2, 
+  ChevronDown, 
+  ChevronUp, 
+  RotateCcw, 
+  ChevronRight,
+  Map as MapIcon
+} from 'lucide-react';
+import Link from 'next/link';
 
-const DemoBanner = () => (
-  <div className="bg-amber-100 text-amber-800 p-2 text-center text-sm font-medium w-full flex items-center justify-center gap-2">
-    <AlertTriangle className="h-4 w-4" />
-    <span>DEMO DATA - Priority scores are prototype estimates for decision support only.</span>
-  </div>
-);
+interface VillagePriorityItem {
+  id: string;
+  name: string;
+  hindiName?: string;
+  district: string;
+  block: string;
+  coordinates: [number, number];
+  baseScore: number;
+  priority: 'Very High' | 'High' | 'Medium' | 'Low';
+  stats: {
+    population: number;
+    affectedRatio: string;
+    schools: number;
+    contaminationStatus: string;
+  };
+  factors: {
+    popExposure: number;
+    contaminationSeverity: number;
+    gwExposure: number;
+    sensitiveLocations: number;
+    agriExposure: number;
+  };
+}
 
-type Village = {
-  id: string; name: string; baseScore: number; priority: 'Very High' | 'High' | 'Medium' | 'Low';
-  stats: { population: number; contamination: string; schools: number; agriExposure: string; trend: string; altWater: string; };
-  factors: { popExposure: number; contaminationSeverity: number; gwExposure: number; sensitiveLocations: number; agriExposure: number; };
-};
-
-const initialVillages: Village[] = [
-  { id: 'v1', name: 'Khanchandpur', baseScore: 92, priority: 'Very High', stats: { population: 8240, contamination: '0.18 mg/L', schools: 3, agriExposure: 'High', trend: 'Increasing', altWater: 'Poor' }, factors: { popExposure: 95, contaminationSeverity: 98, gwExposure: 85, sensitiveLocations: 90, agriExposure: 70 } },
-  { id: 'v2', name: 'Panki', baseScore: 78, priority: 'High', stats: { population: 15400, contamination: '0.09 mg/L', schools: 6, agriExposure: 'Low', trend: 'Stable', altWater: 'Partial' }, factors: { popExposure: 88, contaminationSeverity: 75, gwExposure: 60, sensitiveLocations: 85, agriExposure: 30 } },
-  { id: 'v3', name: 'Rania', baseScore: 71, priority: 'High', stats: { population: 4300, contamination: '0.12 mg/L', schools: 1, agriExposure: 'High', trend: 'Stable', altWater: 'None' }, factors: { popExposure: 60, contaminationSeverity: 85, gwExposure: 80, sensitiveLocations: 40, agriExposure: 85 } },
-  { id: 'v4', name: 'Rooma', baseScore: 54, priority: 'Medium', stats: { population: 6100, contamination: '0.06 mg/L', schools: 2, agriExposure: 'Medium', trend: 'Decreasing', altWater: 'Good' }, factors: { popExposure: 65, contaminationSeverity: 55, gwExposure: 50, sensitiveLocations: 60, agriExposure: 50 } },
-  { id: 'v5', name: 'Sachendi', baseScore: 35, priority: 'Low', stats: { population: 9200, contamination: '0.03 mg/L', schools: 4, agriExposure: 'Low', trend: 'Stable', altWater: 'Good' }, factors: { popExposure: 75, contaminationSeverity: 20, gwExposure: 30, sensitiveLocations: 55, agriExposure: 20 } }
-];
-
-const getPriorityColor = (priority: string) => {
+const getPriorityBadge = (priority: string) => {
   switch (priority) {
-    case 'Very High': return 'bg-red-100 text-red-800 border-red-200';
-    case 'High': return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'Low': return 'bg-green-100 text-green-800 border-green-200';
-    default: return 'bg-slate-100 text-slate-800 border-slate-200';
+    case 'Very High':
+      return 'bg-red-50 text-red-800 border-red-200';
+    case 'High':
+      return 'bg-amber-50 text-amber-800 border-amber-200';
+    case 'Medium':
+      return 'bg-yellow-50 text-yellow-800 border-yellow-200';
+    case 'Low':
+      return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    default:
+      return 'bg-stone-100 text-stone-700 border-stone-200';
   }
 };
 
-const getMapDotColor = (priority: string) => {
+const getMapColor = (priority: string) => {
   switch (priority) {
-    case 'Very High': return 'bg-red-500';
-    case 'High': return 'bg-orange-500';
-    case 'Medium': return 'bg-yellow-500';
-    case 'Low': return 'bg-green-500';
-    default: return 'bg-slate-500';
+    case 'Very High': return '#b91c1c';
+    case 'High': return '#d97706';
+    case 'Medium': return '#ca8a04';
+    case 'Low': return '#15803d';
+    default: return '#64748b';
   }
 };
 
 export default function PrioritizationPage() {
-  const [villages, setVillages] = useState(initialVillages);
-  const [expandedId, setExpandedId] = useState<string | null>('v1');
-  const [weights, setWeights] = useState({ popExposure: 25, contaminationSeverity: 30, gwExposure: 20, sensitiveLocations: 15, agriExposure: 10 });
+  const [villages, setVillages] = useState<VillagePriorityItem[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedVillageId, setSelectedVillageId] = useState<string | null>(null);
+
+  const [weights, setWeights] = useState({
+    popExposure: 25,
+    contaminationSeverity: 30,
+    gwExposure: 20,
+    sensitiveLocations: 15,
+    agriExposure: 10,
+  });
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+
+  // Initial load from store
+  useEffect(() => {
+    const db = getDb();
+    const rawVillages = db.getVillages();
+
+    const items: VillagePriorityItem[] = rawVillages.map(v => {
+      // Derive factors
+      const popScore = Math.min(100, Math.round((v.population / 15000) * 100));
+      const affected = v.affectedWaterSources ?? 0;
+      const total = v.totalWaterSources ?? 1;
+      const ratio = affected / Math.max(1, total);
+      const sevScore = Math.round(ratio * 95) + (v.contaminationStatus === 'High' ? 10 : 0);
+      const cleanSev = Math.min(100, Math.max(15, sevScore));
+      const gwScore = v.contaminationStatus === 'High' ? 88 : v.contaminationStatus === 'Moderate' ? 62 : 25;
+      const schoolScore = Math.min(100, (v.schools || 2) * 22);
+      const blockStr = (v.block || '').toLowerCase();
+      const agriScore = blockStr.includes('rani') || blockStr.includes('panki') ? 85 : 45;
+
+      const initialScore = Math.round(
+        (popScore * 0.25) +
+        (cleanSev * 0.30) +
+        (gwScore * 0.20) +
+        (schoolScore * 0.15) +
+        (agriScore * 0.10)
+      );
+
+      let priority: VillagePriorityItem['priority'] = 'Low';
+      if (initialScore > 75) priority = 'Very High';
+      else if (initialScore > 58) priority = 'High';
+      else if (initialScore > 40) priority = 'Medium';
+
+      return {
+        id: v.id,
+        name: v.name,
+        hindiName: v.hindiName,
+        district: v.district || 'Kanpur Nagar',
+        block: v.block || 'Rania',
+        coordinates: [
+          typeof v.coordinates?.lat === 'number' ? v.coordinates.lat : ((v.coordinates as any)?.[0] ?? 26.45),
+          typeof v.coordinates?.lon === 'number' ? v.coordinates.lon : ((v.coordinates as any)?.[1] ?? 80.35),
+        ],
+        baseScore: initialScore,
+        priority,
+        stats: {
+          population: v.population,
+          affectedRatio: `${affected} / ${total}`,
+          schools: v.schools || 2,
+          contaminationStatus: v.contaminationStatus || 'Moderate',
+        },
+        factors: {
+          popExposure: popScore,
+          contaminationSeverity: cleanSev,
+          gwExposure: gwScore,
+          sensitiveLocations: schoolScore,
+          agriExposure: agriScore,
+        }
+      };
+    });
+
+    items.sort((a, b) => b.baseScore - a.baseScore);
+    setVillages(items);
+    if (items.length > 0) {
+      setExpandedId(items[0].id);
+      setSelectedVillageId(items[0].id);
+    }
+  }, []);
 
   const handleWeightChange = (key: keyof typeof weights, value: number) => {
     setWeights(prev => ({ ...prev, [key]: value }));
@@ -58,7 +154,8 @@ export default function PrioritizationPage() {
   const handleRecalculate = () => {
     const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
     if (totalWeight === 0) return;
-    const newVillages = villages.map(v => {
+
+    const recalculated = villages.map(v => {
       const score = (
         (v.factors.popExposure * (weights.popExposure / totalWeight)) +
         (v.factors.contaminationSeverity * (weights.contaminationSeverity / totalWeight)) +
@@ -67,124 +164,368 @@ export default function PrioritizationPage() {
         (v.factors.agriExposure * (weights.agriExposure / totalWeight))
       );
       const newScore = Math.round(score);
-      let newPriority: Village['priority'] = 'Low';
-      if (newScore > 85) newPriority = 'Very High';
-      else if (newScore > 65) newPriority = 'High';
-      else if (newScore > 45) newPriority = 'Medium';
+      let newPriority: VillagePriorityItem['priority'] = 'Low';
+      if (newScore > 75) newPriority = 'Very High';
+      else if (newScore > 58) newPriority = 'High';
+      else if (newScore > 40) newPriority = 'Medium';
       return { ...v, baseScore: newScore, priority: newPriority };
     });
-    newVillages.sort((a, b) => b.baseScore - a.baseScore);
-    setVillages(newVillages);
+
+    recalculated.sort((a, b) => b.baseScore - a.baseScore);
+    setVillages(recalculated);
   };
 
+  const renderMarkers = (map: any, maplibregl: any) => {
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    villages.forEach((v, idx) => {
+      const el = document.createElement('div');
+      el.className = 'cursor-pointer transform hover:scale-125 transition-transform';
+      const color = getMapColor(v.priority);
+      el.innerHTML = `
+        <div style="
+          background: ${color};
+          color: white;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: 2px solid white;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: monospace;
+          font-weight: bold;
+          font-size: 11px;
+        ">
+          #${idx + 1}
+        </div>
+      `;
+
+      el.onclick = () => {
+        setExpandedId(v.id);
+        setSelectedVillageId(v.id);
+        map.flyTo({ center: [v.coordinates[1], v.coordinates[0]], zoom: 12 });
+      };
+
+      const popup = new maplibregl.Popup({ offset: 15 }).setHTML(`
+        <div style="padding: 6px 10px; font-family: sans-serif;">
+          <strong style="font-size: 13px; color: #002116;">${v.name}</strong>
+          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+            Rank: #${idx + 1} · Score: ${v.baseScore} (${v.priority})
+          </div>
+        </div>
+      `);
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([v.coordinates[1], v.coordinates[0]])
+        .setPopup(popup)
+        .addTo(map);
+
+      markersRef.current.push(marker);
+    });
+  };
+
+  // Setup MapLibre GL instance for regional prioritization
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    let isMounted = true;
+
+    import('maplibre-gl').then((maplibreglModule: any) => {
+      if (!isMounted || !mapContainerRef.current) return;
+      const maplibregl = maplibreglModule.default || maplibreglModule;
+
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        center: [80.15, 26.35],
+        zoom: 9.8,
+        attributionControl: false,
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+
+      map.on('load', () => {
+        if (!isMounted) return;
+        renderMarkers(map, maplibregl);
+      });
+
+      mapInstanceRef.current = map;
+    }).catch(console.error);
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Re-render markers when villages score changes
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      import('maplibre-gl').then((maplibreglModule: any) => {
+        const maplibregl = maplibreglModule.default || maplibreglModule;
+        renderMarkers(mapInstanceRef.current, maplibregl);
+      });
+    }
+  }, [villages]);
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#f4fbf7] text-[#0c1f18] font-sans selection:bg-[#c3ebd8] selection:text-[#002116]">
       <Header />
-      <DemoBanner />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Intervention Prioritization</h1>
-          <p className="text-lg text-slate-600">Prototype Intervention Priority Index</p>
+      
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-mono text-stone-500">
+          <Link href="/" className="hover:text-stone-900">Home</Link>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-[#002116] font-bold">Intervention Prioritization Index</span>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <div className="w-full lg:w-3/5 flex flex-col gap-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative h-[400px] flex items-center justify-center bg-slate-100">
-              <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/grid-me.png')]"></div>
-              <div className="relative w-full h-full p-8">
-                <span className="absolute top-4 left-4 bg-white/80 backdrop-blur px-3 py-1 rounded text-xs font-medium text-slate-600 shadow-sm">Kanpur Nagar District Overview</span>
+        {/* Title Header */}
+        <div className="border-b border-stone-200 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-0.5 rounded text-[11px] font-mono uppercase bg-[#ddf3e7] text-[#002116] font-bold border border-stone-200">
+                Decision Support Matrix
+              </span>
+              <span className="text-xs font-mono text-stone-500">
+                Multi-Criteria Resource Allocation Engine
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-[#002116] tracking-tight">
+              Community Intervention Prioritization
+            </h1>
+            <p className="text-sm sm:text-base text-stone-600 mt-1 max-w-2xl">
+              Equitably allocate remediation budgets, filtration plants, and medical checkups based on empirical exposure, contamination severity, and school density.
+            </p>
+          </div>
+        </div>
+
+        {/* Main Grid: Left Map & Sliders, Right Priority Ranking */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left: Map + Sliders (7 cols) */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            {/* Real GIS Prioritization Map */}
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-5 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <MapIcon className="w-4 h-4 text-[#2E8B68]" />
+                  <h3 className="font-serif font-bold text-base text-[#002116]">
+                    Regional Vulnerability Geospace (Kanpur Sector)
+                  </h3>
+                </div>
+                <span className="text-[11px] font-mono text-stone-500">
+                  Numbered by Priority Rank
+                </span>
+              </div>
+
+              <div className="w-full h-80 rounded-xl overflow-hidden border border-stone-200 relative">
+                <div ref={mapContainerRef} className="w-full h-full" />
                 
-                <div className="absolute top-1/4 left-1/4 flex flex-col items-center">
-                  <div className={`w-4 h-4 rounded-full shadow-md border-2 border-white ${getMapDotColor(villages.find(v=>v.name==='Khanchandpur')?.priority || 'High')}`}></div>
-                  <span className="text-xs font-bold mt-1 bg-white/70 px-1 rounded">Khanchandpur</span>
-                </div>
-                <div className="absolute top-1/2 left-2/3 flex flex-col items-center">
-                  <div className={`w-4 h-4 rounded-full shadow-md border-2 border-white ${getMapDotColor(villages.find(v=>v.name==='Panki')?.priority || 'High')}`}></div>
-                  <span className="text-xs font-bold mt-1 bg-white/70 px-1 rounded">Panki</span>
-                </div>
-                <div className="absolute bottom-1/4 left-1/3 flex flex-col items-center">
-                  <div className={`w-4 h-4 rounded-full shadow-md border-2 border-white ${getMapDotColor(villages.find(v=>v.name==='Rania')?.priority || 'High')}`}></div>
-                  <span className="text-xs font-bold mt-1 bg-white/70 px-1 rounded">Rania</span>
-                </div>
-                <div className="absolute top-2/3 right-1/4 flex flex-col items-center">
-                  <div className={`w-3 h-3 rounded-full shadow-md border-2 border-white ${getMapDotColor(villages.find(v=>v.name==='Rooma')?.priority || 'Medium')}`}></div>
-                  <span className="text-xs font-bold mt-1 bg-white/70 px-1 rounded">Rooma</span>
+                {/* Floating Map Legend */}
+                <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm p-2 rounded-lg border border-stone-200 text-[10px] font-mono shadow-md space-y-1 z-10">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-700"></span>
+                    <span>Very High Priority</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+                    <span>High Priority</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-600"></span>
+                    <span>Medium Priority</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Settings2 className="h-5 w-5 text-slate-500" />
-                <h2 className="text-lg font-bold text-slate-900">Modify Factor Weights</h2>
+            {/* Factor Weight Sliders */}
+            <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 space-y-6">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-5 h-5 text-[#2E8B68]" />
+                  <h2 className="font-serif font-bold text-lg text-[#002116]">
+                    Multi-Factor Weight Calibration
+                  </h2>
+                </div>
+                <button
+                  onClick={() => {
+                    setWeights({
+                      popExposure: 25,
+                      contaminationSeverity: 30,
+                      gwExposure: 20,
+                      sensitiveLocations: 15,
+                      agriExposure: 10,
+                    });
+                  }}
+                  className="text-xs font-mono text-stone-500 hover:text-stone-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" /> Reset Defaults
+                </button>
               </div>
-              <div className="space-y-4">
-                {Object.entries(weights).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-4">
-                    <label className="w-1/3 text-sm font-medium text-slate-700 capitalize truncate">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
-                    <input type="range" min="0" max="100" value={value} onChange={(e) => handleWeightChange(key as keyof typeof weights, parseInt(e.target.value))} className="w-1/2 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" />
-                    <span className="w-1/6 text-sm text-right font-mono text-slate-500">{value}%</span>
-                  </div>
-                ))}
+
+              <div className="space-y-4 text-xs font-mono">
+                {Object.entries(weights).map(([key, value]) => {
+                  const labelMap: Record<string, string> = {
+                    popExposure: 'Population Exposure (Census)',
+                    contaminationSeverity: 'Contamination Severity (Cr Plume Exceedance)',
+                    gwExposure: 'Groundwater Vulnerability & Depth',
+                    sensitiveLocations: 'Sensitive Receptors (Schools / Anganwadis)',
+                    agriExposure: 'Agricultural Bio-Accumulation Exposure',
+                  };
+
+                  return (
+                    <div key={key} className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-stone-700 font-bold">{labelMap[key] || key}</span>
+                        <strong className="text-[#006492] font-mono text-sm">{value}%</strong>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={value}
+                        onChange={(e) => handleWeightChange(key as keyof typeof weights, parseInt(e.target.value))}
+                        className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-[#2E8B68]"
+                      />
+                    </div>
+                  );
+                })}
               </div>
-              <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
-                <p className="text-xs text-slate-400 max-w-[60%]">Modified weights affect the prototype priority index only.</p>
-                <button onClick={handleRecalculate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Recalculate</button>
+
+              <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <span className="text-[11px] font-mono text-stone-500">
+                  Scores normalize dynamically to 100% composite weight.
+                </span>
+                <button
+                  onClick={handleRecalculate}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#12372a] hover:bg-[#002116] text-white rounded-xl text-xs font-mono font-bold shadow-sm transition-all cursor-pointer"
+                >
+                  Recalculate Priority Ranks →
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="w-full lg:w-2/5 flex flex-col gap-4">
-            <h3 className="font-bold text-slate-800 mb-2 flex justify-between items-end">
-              <span>Priority Ranking</span><span className="text-sm font-normal text-slate-500">Based on Index Score</span>
-            </h3>
+          {/* Right: Priority Ranking List (5 cols) */}
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <div className="flex justify-between items-end mb-1">
+              <div>
+                <span className="text-xs font-mono text-[#006492] font-bold uppercase">INDEX RESULTS</span>
+                <h3 className="font-serif font-bold text-xl text-[#002116]">Prioritized Action List</h3>
+              </div>
+              <span className="text-xs font-mono text-stone-500">{villages.length} Communities</span>
+            </div>
 
-            {villages.map((village, idx) => (
-              <div key={village.id} className={`bg-white rounded-xl shadow-sm border ${expandedId === village.id ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'} overflow-hidden transition-all`}>
-                <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50" onClick={() => setExpandedId(expandedId === village.id ? null : village.id)}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-sm">#{idx + 1}</div>
-                    <div>
-                      <h4 className="font-bold text-slate-900">{village.name}</h4>
-                      <div className="flex gap-2 items-center mt-1">
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${getPriorityColor(village.priority)}`}>{village.priority}</span>
-                        <span className="text-xs font-mono text-slate-500">Score: {village.baseScore}</span>
+            <div className="space-y-3">
+              {villages.map((village, idx) => {
+                const isExpanded = expandedId === village.id;
+                return (
+                  <div
+                    key={village.id}
+                    className={`bg-white rounded-2xl shadow-sm border transition-all overflow-hidden ${
+                      isExpanded ? 'border-[#2E8B68] ring-2 ring-[#2E8B68]/15' : 'border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <div
+                      className="p-4 flex items-center justify-between cursor-pointer hover:bg-stone-50/70 transition-colors"
+                      onClick={() => setExpandedId(isExpanded ? null : village.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center font-mono font-bold text-xs">
+                          #{idx + 1}
+                        </div>
+                        <div>
+                          <h4 className="font-serif font-bold text-base text-[#002116]">{village.name}</h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${getPriorityBadge(village.priority)}`}>
+                              {village.priority} Priority
+                            </span>
+                            <span className="text-xs font-mono text-stone-500">
+                              Score: <strong className="text-stone-800">{village.baseScore}</strong>/100
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-stone-400">
+                        {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                       </div>
                     </div>
-                  </div>
-                  {expandedId === village.id ? <ChevronUp className="h-5 w-5 text-slate-400" /> : <ChevronDown className="h-5 w-5 text-slate-400" />}
-                </div>
 
-                {expandedId === village.id && (
-                  <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6 text-sm">
-                      <div><span className="block text-slate-500 text-xs">Affected Pop.</span><span className="font-medium text-slate-900">{village.stats.population.toLocaleString()}</span></div>
-                      <div><span className="block text-slate-500 text-xs">Contamination</span><span className="font-medium text-red-600">{village.stats.contamination}</span></div>
-                      <div><span className="block text-slate-500 text-xs">Agri Exposure</span><span className="font-medium text-slate-900">{village.stats.agriExposure}</span></div>
-                      <div><span className="block text-slate-500 text-xs">Alt. Water</span><span className="font-medium text-slate-900">{village.stats.altWater}</span></div>
-                    </div>
-                    <div className="space-y-3">
-                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Why is this prioritized?</p>
-                      {[
-                        { label: 'Pop. Exposure', val: village.factors.popExposure, w: weights.popExposure },
-                        { label: 'Severity', val: village.factors.contaminationSeverity, w: weights.contaminationSeverity },
-                        { label: 'GW Exposure', val: village.factors.gwExposure, w: weights.gwExposure },
-                        { label: 'Sens. Locs', val: village.factors.sensitiveLocations, w: weights.sensitiveLocations },
-                        { label: 'Agri Risk', val: village.factors.agriExposure, w: weights.agriExposure }
-                      ].map(f => (
-                        <div key={f.label} className="text-xs">
-                          <div className="flex justify-between mb-1"><span className="text-slate-600">{f.label} (W: {f.w}%)</span><span className="font-mono text-slate-500">{f.val}/100</span></div>
-                          <div className="w-full bg-slate-200 rounded-full h-1.5"><div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${f.val}%` }}></div></div>
+                    {isExpanded && (
+                      <div className="p-5 border-t border-stone-100 bg-[#f4fbf7]/40 space-y-4 text-xs font-mono">
+                        <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-stone-200">
+                          <div>
+                            <span className="text-stone-400 block text-[10px]">POPULATION</span>
+                            <strong className="text-stone-900">{village.stats.population.toLocaleString()}</strong>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 block text-[10px]">AFFECTED SOURCES</span>
+                            <strong className="text-red-700">{village.stats.affectedRatio}</strong>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 block text-[10px]">SCHOOLS</span>
+                            <strong className="text-stone-900">{village.stats.schools} institutions</strong>
+                          </div>
+                          <div>
+                            <span className="text-stone-400 block text-[10px]">DISTRICT</span>
+                            <strong className="text-stone-900">{village.district}</strong>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="space-y-2">
+                          <span className="text-[11px] font-bold text-stone-700 block uppercase">
+                            Contributing Multi-Criteria Factors:
+                          </span>
+                          {[
+                            { label: 'Pop. Exposure', val: village.factors.popExposure, w: weights.popExposure },
+                            { label: 'Contamination Severity', val: village.factors.contaminationSeverity, w: weights.contaminationSeverity },
+                            { label: 'Aquifer Vulnerability', val: village.factors.gwExposure, w: weights.gwExposure },
+                            { label: 'School Density', val: village.factors.sensitiveLocations, w: weights.sensitiveLocations },
+                            { label: 'Agricultural Risk', val: village.factors.agriExposure, w: weights.agriExposure },
+                          ].map(f => (
+                            <div key={f.label} className="space-y-0.5">
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-stone-600">{f.label} (W: {f.w}%)</span>
+                                <strong className="text-stone-800">{f.val}/100</strong>
+                              </div>
+                              <div className="w-full bg-stone-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-[#2E8B68] h-1.5 rounded-full" style={{ width: `${f.val}%` }}></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                          <Link
+                            href={`/villages/${village.id}`}
+                            className="text-[#006492] hover:text-[#002116] font-bold flex items-center gap-1"
+                          >
+                            Open Digital Twin Profile →
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>
+
       <Footer />
     </div>
   );

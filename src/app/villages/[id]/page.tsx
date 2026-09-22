@@ -46,14 +46,19 @@ export default function VillageDigitalTwinPage() {
   useEffect(() => {
     const loadData = () => {
       const db = getDb();
-      const v = db.getVillageById(id);
+      const resolvedId = db.resolveVillageId(id);
+      const v = db.getVillageById(resolvedId) || db.getVillageById(id);
       if (v) {
         setVillage(v);
-        setSources(db.getWaterSourcesByVillage(id));
-        setReports(db.getReportsByVillage(id));
-        setRemediation(db.getRemediationProjects().filter(p => p.villageId === id));
-        setTimeline(db.getTimelineEventsByVillage(id));
-        setSchools(db.getSchoolsByVillage(id));
+        const actualId = v.id;
+        const wsList = year === 2026 
+          ? db.getWaterSourcesByVillage(actualId) 
+          : db.getWaterSourcesByYear(year).filter(ws => ws.villageId === actualId);
+        setSources(wsList);
+        setReports(db.getReportsByVillage(actualId));
+        setRemediation(db.getRemediationProjectsByVillage(actualId));
+        setTimeline(db.getTimelineEventsByVillage(actualId));
+        setSchools(db.getSchoolsByVillage(actualId));
       }
     };
     loadData();
@@ -61,7 +66,7 @@ export default function VillageDigitalTwinPage() {
     const handleUpdate = () => loadData();
     window.addEventListener('bhujal_data_updated', handleUpdate);
     return () => window.removeEventListener('bhujal_data_updated', handleUpdate);
-  }, [id]);
+  }, [id, year]);
 
   // Initialize MapLibre map centered on village
   useEffect(() => {
@@ -84,7 +89,22 @@ export default function VillageDigitalTwinPage() {
 
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '&copy; OpenStreetMap Contributors'
+            }
+          },
+          layers: [{
+            id: 'osm',
+            type: 'raster',
+            source: 'osm'
+          }]
+        },
         center: [centerLon, centerLat],
         zoom: 13.5,
         attributionControl: false,
@@ -172,6 +192,47 @@ export default function VillageDigitalTwinPage() {
             .setPopup(popup)
             .addTo(map);
         });
+
+        // Add School Markers
+        schools.forEach((school) => {
+          const el = document.createElement('div');
+          el.className = 'cursor-pointer transform hover:scale-125 transition-transform';
+          el.innerHTML = `
+            <div style="
+              width: 24px;
+              height: 24px;
+              border-radius: 6px;
+              background: #1e3a8a;
+              border: 2px solid white;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 11px;
+            ">🏫</div>
+          `;
+          const sLon = typeof school.coordinates?.lon === 'number' ? school.coordinates.lon : ((school.coordinates as any)?.[1] ?? centerLon);
+          const sLat = typeof school.coordinates?.lat === 'number' ? school.coordinates.lat : ((school.coordinates as any)?.[0] ?? centerLat);
+          const popup = new maplibregl.Popup({ offset: 15 }).setHTML(`
+            <div style="padding: 8px; font-family: sans-serif;">
+              <strong>${school.name}</strong>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Students: ${school.studentCount}</div>
+            </div>
+          `);
+          new maplibregl.Marker({ element: el }).setLngLat([sLon, sLat]).setPopup(popup).addTo(map);
+        });
+
+        // Auto fit bounds around village points
+        if (sources.length > 0) {
+          const bounds = new maplibregl.LngLatBounds([centerLon, centerLat], [centerLon, centerLat]);
+          sources.forEach((s) => {
+            const sLon = typeof s.coordinates?.lon === 'number' ? s.coordinates.lon : ((s.coordinates as any)?.[1] ?? centerLon);
+            const sLat = typeof s.coordinates?.lat === 'number' ? s.coordinates.lat : ((s.coordinates as any)?.[0] ?? centerLat);
+            bounds.extend([sLon, sLat]);
+          });
+          map.fitBounds(bounds, { padding: 45, maxZoom: 15 });
+        }
       });
 
       mapInstanceRef.current = map;

@@ -18,6 +18,8 @@ import {
   demoPredictionResults,
   demoRiskScores,
   demoDataSources,
+  demoMediaAssets,
+  demoBotanicalSpecies,
 } from '@/lib/data/demo-data';
 
 import type {
@@ -36,6 +38,8 @@ import type {
   PredictionResult,
   RiskScore,
   DataSource,
+  MediaAsset,
+  BotanicalSpecies,
 } from '@/lib/types';
 
 export type DatasetMode = 'sample' | 'real';
@@ -100,6 +104,9 @@ export interface RemediationPrescription {
     rootDepth: string;
     care: string;
     photoUrl?: string;
+    suitabilityScore?: number;
+    warnings?: string[];
+    citations?: string[];
   }[];
   feasibilityScore: number;
   halfLifeMonths: number;
@@ -222,6 +229,22 @@ class BhujalDataStore {
   // -------------------------------------------------------------
   // Villages
   // -------------------------------------------------------------
+  
+  // -------------------------------------------------------------
+  // Village Normalization & Child Entity Resolution
+  // -------------------------------------------------------------
+  public resolveVillageId(input: string): string {
+    if (!input) return 'V-001';
+    const norm = input.trim().toLowerCase();
+    const v = demoVillages.find(
+      (v) =>
+        v.id.toLowerCase() === norm ||
+        v.name.toLowerCase() === norm ||
+        v.id.replace('-', '').toLowerCase() === norm.replace('-', '')
+    );
+    return v ? v.id : input;
+  }
+
   public getVillages(): Village[] {
     return demoVillages;
   }
@@ -235,6 +258,30 @@ class BhujalDataStore {
         v.name.toLowerCase() === norm ||
         v.id.replace('-', '').toLowerCase() === norm.replace('-', '')
     );
+  }
+
+  public getRiskScoreForVillage(villageId: string): RiskScore | undefined {
+    const resolved = this.resolveVillageId(villageId);
+    return demoRiskScores.find(rs => rs.targetId === resolved);
+  }
+
+  
+  // -------------------------------------------------------------
+  // Media Assets Registry
+  // -------------------------------------------------------------
+  public getMediaAssets(): MediaAsset[] {
+    return demoMediaAssets;
+  }
+
+  public getMediaAssetById(id: string): MediaAsset | undefined {
+    return demoMediaAssets.find((m: MediaAsset) => m.id === id);
+  }
+
+  // -------------------------------------------------------------
+  // Botanical Hyperaccumulator Species Library
+  // -------------------------------------------------------------
+  public getBotanicalSpecies(): BotanicalSpecies[] {
+    return demoBotanicalSpecies;
   }
 
   // -------------------------------------------------------------
@@ -255,12 +302,9 @@ class BhujalDataStore {
 
   public getWaterSourcesByVillage(villageId: string): WaterSource[] {
     if (!villageId) return [];
-    const norm = villageId.trim().toLowerCase();
+    const vId = this.resolveVillageId(villageId).toLowerCase();
     return this.getWaterSources().filter(
-      (s) =>
-        s.villageId.toLowerCase() === norm ||
-        s.villageId.replace('-', '').toLowerCase() === norm.replace('-', '') ||
-        (demoVillages.find(v => v.id === s.villageId)?.name.toLowerCase() === norm)
+      (s) => s.villageId.toLowerCase() === vId
     );
   }
 
@@ -339,6 +383,44 @@ class BhujalDataStore {
     });
 
     return mapped.sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, limit);
+  }
+
+  
+  // -------------------------------------------------------------
+  // Temporal Filtering (2018–2026 Historical Advection)
+  // -------------------------------------------------------------
+  public getHistoricalDataForVillage(villageId: string, year?: number) {
+    const vId = this.resolveVillageId(villageId);
+    const sources = this.getWaterSourcesByVillage(vId);
+    const sourceIds = new Set(sources.map(s => s.id));
+    
+    let measurements = this.getMeasurements().filter(m => sourceIds.has(m.sourceId));
+    if (year) {
+      measurements = measurements.filter(m => {
+        const mYear = parseInt(m.date.split('-')[0], 10);
+        return mYear <= year;
+      });
+    }
+    return measurements;
+  }
+
+  public getWaterSourcesByYear(year: number): (WaterSource & { activeMeasurement?: Measurement })[] {
+    return this.getWaterSources().map(s => {
+      const ms = this.getMeasurementsBySource(s.id).filter(m => {
+        const mYear = parseInt(m.date.split('-')[0], 10);
+        return mYear <= year;
+      });
+      const latest = ms[0];
+      let status = s.status;
+      if (latest) {
+        status = latest.value > 0.05 ? 'do_not_use' : latest.value >= 0.03 ? 'restricted' : 'safe';
+      }
+      return {
+        ...s,
+        status,
+        activeMeasurement: latest
+      };
+    });
   }
 
   // -------------------------------------------------------------
@@ -464,7 +546,8 @@ class BhujalDataStore {
   }
 
   public getReportsByVillage(villageId: string): CommunityReport[] {
-    const vId = villageId.toLowerCase();
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
     return this.getCommunityReports().filter(
       (r) => r.villageId.toLowerCase() === vId
     );
@@ -536,8 +619,9 @@ class BhujalDataStore {
   }
 
   public getSchoolsByVillage(villageId: string): School[] {
-    const vId = villageId.toLowerCase();
-    return demoSchools.filter(s => s.villageId.toLowerCase() === vId);
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoSchools.filter((s) => s.villageId.toLowerCase() === vId);
   }
 
   // -------------------------------------------------------------
@@ -555,8 +639,9 @@ class BhujalDataStore {
   }
 
   public getTimelineEventsByVillage(villageId: string): TimelineEvent[] {
-    const vId = villageId.toLowerCase();
-    return demoTimelineEvents.filter(t => t.villageId.toLowerCase() === vId);
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoTimelineEvents.filter((t) => t.villageId.toLowerCase() === vId);
   }
 
   // -------------------------------------------------------------
@@ -702,6 +787,14 @@ class BhujalDataStore {
     return demoRemediationProjects;
   }
 
+  public getRemediationProjectsByVillage(villageId: string): RemediationProject[] {
+    if (!villageId) return [];
+    const vId = this.resolveVillageId(villageId).toLowerCase();
+    return demoRemediationProjects.filter(
+      (p) => p.villageId.toLowerCase() === vId
+    );
+  }
+
   public calculateNatureRemediation(
     inputsOrPh: number | {
       ph: number;
@@ -735,74 +828,104 @@ class BhujalDataStore {
       if (soilTypeArg !== undefined) soilType = soilTypeArg;
     }
 
-    let strategy = 'Phytoremediation Biosorption Swale with Deep Root Barrier';
-    let hindiStrategy = 'गहरी जड़ युक्त वेटिवर बायो-स्वाले द्वारा फाइटोरीमेडिएशन';
-    let projected90d = 55;
-    let projected180d = 82;
-    let confidenceScore = 88;
+    // Dynamic Multi-Factor Suitability Scoring for all species
+    const scoredCandidates = demoBotanicalSpecies.map((sp: BotanicalSpecies) => {
+      // pH compatibility (0 - 100)
+      let phScore = 100;
+      if (ph < sp.preferredPhMin) {
+        phScore = Math.max(10, 100 - (sp.preferredPhMin - ph) * 35);
+      } else if (ph > sp.preferredPhMax) {
+        phScore = Math.max(10, 100 - (ph - sp.preferredPhMax) * 35);
+      }
 
-    if (crConcentrationMgKg > 5.0) {
-      strategy = 'Integrated Vetiver + Indian Mustard Phyto-Extraction with Biochar Soil Amendment';
-      hindiStrategy = 'वेटिवर एवं सरसों की संयुक्त फाइटो-एक्सट्रैक्शन प्रणाली';
-      projected90d = 48;
-      projected180d = 76;
-      confidenceScore = 91;
-    } else if (ph > 8.0) {
-      strategy = 'Alkaline Bio-precipitation and Vetiver Rhizofiltration';
-      hindiStrategy = 'क्षारीय बायो-अवक्षेपण एवं वेटिवर राइजोफिल्ट्रेशन';
-      projected90d = 62;
-      projected180d = 88;
-      confidenceScore = 85;
+      // Moisture compatibility (0 - 100)
+      let moistureScore = 100;
+      if (moisturePercent < sp.preferredMoistureMin) {
+        moistureScore = Math.max(15, 100 - (sp.preferredMoistureMin - moisturePercent) * 3);
+      } else if (moisturePercent > sp.preferredMoistureMax) {
+        moistureScore = Math.max(15, 100 - (moisturePercent - sp.preferredMoistureMax) * 3);
+      }
+
+      // Cr tolerance score
+      let crScore = 100;
+      if (crConcentrationMgKg > sp.maxCrToleranceMgKg) {
+        const excess = crConcentrationMgKg - sp.maxCrToleranceMgKg;
+        crScore = Math.max(5, 100 - excess * 0.8);
+      }
+
+      // Depth feasibility score
+      let depthScore = 100;
+      if (groundwaterDepthMeters > sp.effectiveRootDepthMeters) {
+        depthScore = Math.max(40, 100 - (groundwaterDepthMeters - sp.effectiveRootDepthMeters) * 4);
+      }
+
+      const totalSuitability = Math.round(
+        phScore * 0.35 + moistureScore * 0.25 + crScore * 0.25 + depthScore * 0.15
+      );
+
+      // Construct tailored warning and agronomic recommendation
+      const warnings: string[] = [];
+      if (ph < sp.preferredPhMin || ph > sp.preferredPhMax) {
+        warnings.push(`Soil pH (${ph}) is outside optimal range (${sp.preferredPhMin} - ${sp.preferredPhMax}). Lime or biochar buffering advised.`);
+      }
+      if (crConcentrationMgKg > sp.maxCrToleranceMgKg) {
+        warnings.push(`Cr(VI) concentration (${crConcentrationMgKg} mg/kg) exceeds typical unassisted threshold (${sp.maxCrToleranceMgKg} mg/kg). Pre-dilution required.`);
+      }
+      if (groundwaterDepthMeters > sp.effectiveRootDepthMeters + 3) {
+        warnings.push(`Water table depth (${groundwaterDepthMeters}m) exceeds root reach (${sp.effectiveRootDepthMeters}m). Interception trench required for groundwater contact.`);
+      }
+
+      return {
+        scientificName: sp.scientificName,
+        commonName: sp.commonName,
+        mechanism: sp.mechanism,
+        bcf: sp.bioaccumulationFactor,
+        rootDepth: `${sp.effectiveRootDepthMeters}m depth`,
+        care: `${sp.agronomicCare} ${warnings.length > 0 ? 'Note: ' + warnings[0] : ''}`,
+        photoUrl: sp.photoUrl,
+        suitabilityScore: totalSuitability,
+        warnings,
+        citations: sp.citations
+      };
+    }).sort((a: any, b: any) => b.suitabilityScore - a.suitabilityScore);
+
+    const primaryCandidate = scoredCandidates[0];
+    let strategy = `${primaryCandidate.commonName} Phytoremediation Swale with Root Barrier`;
+    let hindiStrategy = `${primaryCandidate.commonName} द्वारा फाइटोरीमेडिएशन एवं बायो-बैरियर प्रणाली`;
+    
+    if (crConcentrationMgKg > 100) {
+      strategy = `Integrated ${scoredCandidates[0].commonName} + ${scoredCandidates[1]?.commonName || 'Deep Root'} Hyperaccumulation with Biochar Amendment`;
+      hindiStrategy = 'उच्च-सांद्रता क्रोमियम निष्कासन एवं बायोचार मृदा उपचार प्रणाली';
+    } else if (ph > 8.5) {
+      strategy = `Alkaline Tolerant ${primaryCandidate.commonName} Rhizofiltration Buffer`;
+      hindiStrategy = 'क्षारीय प्रतिरोधी पादप राइजोफिल्ट्रेशन बफर';
     }
 
-    if (moisturePercent < 25) {
-      projected90d -= 10;
-      projected180d -= 8;
-    }
-
-    const feasibilityScore = Math.max(25, Math.min(96, Math.round(100 - (crConcentrationMgKg * 0.16) + (ph >= 6.5 && ph <= 8.5 ? 12 : -8))));
+    const feasibilityScore = Math.max(20, Math.min(98, primaryCandidate.suitabilityScore));
     const halfLifeMonths = crConcentrationMgKg > 100 ? 14 : crConcentrationMgKg > 50 ? 9 : 6;
-    const confidence = confidenceScore > 88 ? 'High' : 'Medium';
+    const confidence = feasibilityScore > 85 ? 'High' : feasibilityScore > 65 ? 'Medium' : 'Caution';
+    
+    let projected90d = Math.round(feasibilityScore * 0.65);
+    let projected180d = Math.round(feasibilityScore * 0.88);
+
+    const allCitations = Array.from(new Set([
+      'CPCB Guidelines for In-Situ Remediation of Chromium Contaminated Sites (2022)',
+      'CSIR-NBRI Lucknow Phytoremediation Pilot Studies in Kanpur Tanneries (2023)',
+      'IIT Kanpur Environmental Engineering Heavy Metal Biosorption Studies (2023)',
+      ...primaryCandidate.citations
+    ]));
 
     return {
       primaryStrategy: strategy,
       hindiStrategy,
-      candidateSpecies: [
-        {
-          name: 'Vetiver Grass',
-          botanicalName: 'Chrysopogon zizanioides',
-          rootDepth: '3.2m – 4.0m deep vertical root net',
-          mechanism: 'Rhizosphere immobilisation & Cr(VI) to Cr(III) biological reduction',
-          removalEfficiency: '85% – 94% retention of dissolved chromate ions',
-        },
-        {
-          name: 'Indian Mustard',
-          botanicalName: 'Brassica juncea',
-          rootDepth: '0.8m – 1.2m superficial vadose root spread',
-          mechanism: 'Phyto-extraction of soluble heavy metals into harvestable shoot tissue',
-          removalEfficiency: '42% – 60% bio-accumulation in high-biomass growth phase',
-        },
-      ],
-      candidates: [
-        {
-          scientificName: 'Vetiveria zizanioides (Chrysopogon zizanioides)',
-          commonName: 'Vetiver grass (खस)',
-          mechanism: 'Rhizosphere Cr(VI) to Cr(III) reduction & root tissue immobilization',
-          bcf: 124,
-          rootDepth: '3.5m – 4.2m vertical taproot matrix',
-          care: 'Deep trench planting with 2% biochar buffer. Tolerates inundation & pH 5.0–9.5.',
-          photoUrl: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=800&q=80',
-        },
-        {
-          scientificName: 'Brassica juncea',
-          commonName: 'Indian mustard (राई / सरसों)',
-          mechanism: 'Phyto-accumulation in harvestable foliar and shoot biomass',
-          bcf: 68,
-          rootDepth: '0.8m – 1.2m vadose root zone',
-          care: 'Seasonal crop cycle (Rabi). Harvest before flowering to prevent secondary dispersal.',
-          photoUrl: 'https://images.unsplash.com/photo-1508873696983-2df5703bc20d?auto=format&fit=crop&w=800&q=80',
-        },
-      ],
+      candidateSpecies: scoredCandidates.slice(0, 3).map((c: any) => ({
+        name: c.commonName,
+        botanicalName: c.scientificName,
+        rootDepth: c.rootDepth,
+        mechanism: c.mechanism,
+        removalEfficiency: `${c.suitabilityScore}% site compatibility score`
+      })),
+      candidates: scoredCandidates,
       feasibilityScore,
       halfLifeMonths,
       confidence,
@@ -810,17 +933,22 @@ class BhujalDataStore {
       projectedReduction180d: projected180d,
       recommendedSoilAmendment:
         soilType === 'Sandy Loam'
-          ? 'Add 2% activated wood biochar (pyrolysis 500°C) to prevent downward leachate migration.'
-          : 'Incorporate composted farmyard manure (FYM) to stimulate native metal-reducing bacteria.',
-      confidenceScore,
-      scientificCitations: [
-        'CPCB Guidelines for In-Situ Remediation of Chromium Contaminated Sites (2022)',
-        'CSIR-NEERI & IIT Kanpur Phytoremediation Pilot Studies in Rania (2023)',
-        'WHO Guidelines for Drinking-water Quality, 4th ed., Annex 1 (Chromium Standards)',
-      ],
+          ? 'Add 2% activated wood biochar (pyrolysis 500°C) to prevent downward leachate migration into unconfined aquifer.'
+          : 'Incorporate composted farmyard manure (FYM) to stimulate native metal-reducing bacteria and enhance humus binding.',
+      confidenceScore: feasibilityScore,
+      scientificCitations: allCitations,
       disclaimer:
-        'Potential biological intervention calculated based on hydrogeological parameters. Pilot plot field validation required prior to full-scale deployment.',
+        'Potential biological intervention calculated based on empirical hydrogeological parameters. Pilot plot field validation required prior to full-scale deployment.'
     };
+  }
+
+  public calculateRemediationFeasibility(ph: number, moisture: number, cr: number, depth: number) {
+    return this.calculateNatureRemediation({
+      ph,
+      moisturePercent: moisture,
+      crConcentrationMgKg: cr,
+      groundwaterDepthMeters: depth,
+    });
   }
 
   // -------------------------------------------------------------

@@ -54,6 +54,8 @@ export interface WaterSource {
   // Additional fields
   name?: string;
   depthMeters?: number;
+  depth?: number;
+  latestCrMgL?: number;
   lastVerified?: string;
   lastTestedDate?: string;
   contaminant?: string;
@@ -141,12 +143,15 @@ export interface RemediationProject {
   villageId: string;
   stage: string;
   type: string;
+  interventionType?: string;
+  location?: string;
   name?: string;
   status?: string;
   description?: string;
   budget?: string;
   targetReduction?: string;
   leadAgency?: string;
+  responsibleOrg?: string;
   progress?: number;
   startDate?: string;
   endDate?: string;
@@ -162,6 +167,7 @@ export interface CommunityReport {
   category: string;
   status: string;
   description: string;
+  mediaAssetId?: string;
   waterSourceId?: string;
   coordinates?: { lat: number; lon: number };
   title?: string;
@@ -221,4 +227,36 @@ export interface DataSource {
   name: string;
   type: string;
   isDemo: boolean;
+}
+
+export interface MediaAsset {
+  id: string;
+  url: string;
+  type: 'image' | 'document' | 'video';
+  caption: string;
+  source: string;
+  license: string;
+  attribution: string;
+  hash: string;
+  createdAt: string;
+}
+
+export interface BotanicalSpecies {
+  id: string;
+  scientificName: string;
+  commonName: string;
+  hindiName?: string;
+  photoUrl: string;
+  source: string;
+  license: string;
+  preferredPhMin: number;
+  preferredPhMax: number;
+  preferredMoistureMin: number;
+  preferredMoistureMax: number;
+  maxCrToleranceMgKg: number;
+  effectiveRootDepthMeters: number;
+  bioaccumulationFactor: number;
+  mechanism: string;
+  agronomicCare: string;
+  citations: string[];
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState, Suspense } from 'react';
+import React, { useEffect, useRef, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import { 
   Layers, MapPin, Droplets, AlertTriangle, AlertCircle, ChevronLeft, ChevronRight, X, 
   Map as MapIcon, Info, School as SchoolIcon, Activity, Factory, CheckCircle2,
-  Calendar, Users, ExternalLink, Navigation, ShieldAlert, Sparkles, Clock
+  Calendar, Users, ExternalLink, Navigation, ShieldAlert, Sparkles, Clock, Search
 } from 'lucide-react';
 import { getDb, WaterSourceRecord, VillageRecord } from '@/lib/db/store';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -24,6 +24,8 @@ function MapContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedFeature, setSelectedFeature] = useState<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [year, setYear] = useState(2026);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Layers state
   const [layers, setLayers] = useState({
@@ -32,6 +34,7 @@ function MapContent() {
     schools: true,
     contamination: true,
     reports: true,
+    remediation: true,
     predictedZones: false
   });
 
@@ -86,7 +89,7 @@ function MapContent() {
     };
   }, []);
 
-  // Effect to add markers once map is loaded and layers state changes
+  // Effect to add markers once map is loaded and layers/year state changes
   useEffect(() => {
     if (!mapLoaded || !map.current) return;
 
@@ -123,9 +126,10 @@ function MapContent() {
       });
     }
 
-    // 2. Water Sources
+    // 2. Water Sources (filtered dynamically by year)
     if (layers.waterSources) {
-      db.getWaterSources().forEach(ws => {
+      const sourcesList = year === 2026 ? db.getWaterSources() : db.getWaterSourcesByYear(year);
+      sourcesList.forEach(ws => {
         const el = document.createElement('div');
         const color = ws.status === 'safe' ? 'bg-[#2E8B68]' : 
                       ws.status === 'restricted' ? 'bg-amber-500' : 
@@ -167,6 +171,19 @@ function MapContent() {
       });
     }
 
+    // 6. Remediation Projects
+    if (layers.remediation) {
+      db.getRemediationProjects().forEach(rp => {
+        const v = db.getVillageById(rp.villageId);
+        const lat = v ? v.coordinates.lat + 0.003 : 26.45;
+        const lon = v ? v.coordinates.lon + 0.003 : 80.35;
+        const el = document.createElement('div');
+        el.className = 'w-6 h-6 bg-emerald-700 text-white rounded-full border-2 border-white shadow-lg cursor-pointer flex items-center justify-center text-xs hover:scale-125 transition-transform';
+        el.innerHTML = '🌱';
+        addMarker([lon, lat], el, { ...rp, _type: 'remediationProject', coordinates: { lat, lon } });
+      });
+    }
+
     // If URL coordinates matched a feature, select it
     if (urlLat && urlLon && !selectedFeature) {
       const matchReport = db.getCommunityReports().find(r => {
@@ -178,11 +195,14 @@ function MapContent() {
         setSelectedFeature({ ...matchReport, _type: 'report' });
       }
     }
-  }, [mapLoaded, layers, urlLat, urlLon]);
+  }, [mapLoaded, layers, urlLat, urlLon, year]);
+
+  const db = getDb();
+  const getVillageName = (vId: string) => db.getVillageById(vId)?.name || vId;
 
   // Real dynamic chart data for detail panel based on selected feature
   const measurements = selectedFeature?.id && selectedFeature._type === 'waterSource' 
-    ? getDb().getMeasurementsBySource(selectedFeature.id) 
+    ? db.getMeasurementsBySource(selectedFeature.id) 
     : [];
   
   const chartData = measurements.length > 0 
@@ -194,8 +214,62 @@ function MapContent() {
         { name: '2024-08', value: selectedFeature?.status === 'do_not_use' ? 0.61 : 0.02 },
       ];
 
-  const db = getDb();
-  const getVillageName = (vId: string) => db.getVillageById(vId)?.name || vId;
+  // Search filter results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    const results: any[] = [];
+    
+    db.getVillages().forEach(v => {
+      if (v.name.toLowerCase().includes(q) || v.hindiName.includes(q)) {
+        results.push({ ...v, _type: 'village', label: `${v.name} (Village)` });
+      }
+    });
+
+    db.getWaterSources().forEach(ws => {
+      if (ws.name?.toLowerCase().includes(q) || ws.id.toLowerCase().includes(q)) {
+        results.push({ ...ws, _type: 'waterSource', label: `${ws.name || ws.id} (Water Point)` });
+      }
+    });
+
+    db.getSchools().forEach(sc => {
+      if (sc.name.toLowerCase().includes(q)) {
+        results.push({ ...sc, _type: 'school', label: `${sc.name} (School)` });
+      }
+    });
+
+    return results.slice(0, 6);
+  }, [searchQuery]);
+
+  const handleSelectSearchResult = (item: any) => {
+    setSelectedFeature(item);
+    setSearchQuery('');
+    setSidebarOpen(true);
+    if (map.current && item.coordinates) {
+      map.current.flyTo({ center: [item.coordinates.lon, item.coordinates.lat], zoom: 14.5 });
+    }
+  };
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation && map.current) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          map.current.flyTo({ center: [longitude, latitude], zoom: 14 });
+        },
+        () => {
+          map.current.flyTo({ center: [80.342, 26.465], zoom: 14 });
+        }
+      );
+    }
+  };
+
+  const villagesCount = db.getVillages().length;
+  const sourcesCount = (year === 2026 ? db.getWaterSources() : db.getWaterSourcesByYear(year)).length;
+  const schoolsCount = db.getSchools().length;
+  const contamCount = db.getContaminationSources().length;
+  const reportsCount = db.getCommunityReports().length;
+  const remediationCount = db.getRemediationProjects().length;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-slate-100">
@@ -222,10 +296,38 @@ function MapContent() {
             {selectedFeature && (
               <button 
                 onClick={() => setSelectedFeature(null)} 
-                className="text-stone-300 hover:text-white p-1 rounded hover:bg-white/10"
+                className="text-stone-300 hover:text-white p-1 rounded hover:bg-white/10 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
+            )}
+          </div>
+
+          {/* Quick Search Input */}
+          <div className="p-3 bg-slate-50 border-b border-slate-200 relative">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search village, handpump or school..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-mono placeholder:text-slate-400 focus:outline-hidden focus:border-emerald-600"
+              />
+            </div>
+            {searchResults.length > 0 && (
+              <div className="absolute left-3 right-3 top-12 bg-white border border-slate-200 rounded-xl shadow-xl z-30 divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                {searchResults.map((res, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelectSearchResult(res)}
+                    className="w-full text-left px-3 py-2 text-xs font-mono hover:bg-emerald-50 text-slate-700 flex items-center justify-between"
+                  >
+                    <span>{res.label}</span>
+                    <ChevronRight className="w-3 h-3 text-slate-400" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -236,7 +338,7 @@ function MapContent() {
                 <Info className="w-10 h-10 text-slate-400 mx-auto" />
                 <p className="font-serif font-bold text-base text-slate-800">Explore Spatial Intelligence</p>
                 <p className="text-xs font-mono leading-relaxed max-w-xs mx-auto">
-                  Click any point on the map (Water Source, Village, School, Contamination Site, or Citizen Report) to inspect analytical telemetry.
+                  Click any point on the map (Water Source, Village, School, Contamination Site, Remediation Project, or Citizen Report) to inspect analytical telemetry.
                 </p>
               </div>
             )}
@@ -348,7 +450,7 @@ function MapContent() {
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
                   <strong className="block mb-1 text-[11px] font-bold uppercase">Exposure Assessment:</strong>
                   <p className="text-[11px] leading-relaxed">
-                    Water point {selectedFeature.nearestWaterSourceId} is monitored on a 14-day cycle. Water safety advisories are shared directly with the school principal.
+                    Water point {selectedFeature.nearestWaterSourceId} is monitored on a 14-day cycle. Water safety advisories are shared directly with the school administration.
                   </p>
                 </div>
               </div>
@@ -484,6 +586,61 @@ function MapContent() {
                 </Link>
               </div>
             )}
+
+            {/* 6. REMEDIATION PROJECT DETAIL PANEL (NO RAW JSON) */}
+            {selectedFeature && selectedFeature._type === 'remediationProject' && (
+              <div className="space-y-4 text-xs font-mono">
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <span>🌱</span>
+                    <span>{selectedFeature.title || selectedFeature.name}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-700 block mt-0.5 font-bold uppercase">
+                    Status: {(selectedFeature.status || selectedFeature.stage || 'in_progress').replace('_', ' ')}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Community:</span>
+                    <strong className="text-stone-900">{getVillageName(selectedFeature.villageId)}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Technology:</span>
+                    <strong className="text-stone-900">{selectedFeature.type}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Lead Agency:</span>
+                    <strong className="text-[#006492]">{selectedFeature.responsibleOrg || selectedFeature.leadAgency || 'State Groundwater Directorate'}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Target Reduction:</span>
+                    <strong className="text-emerald-700">{selectedFeature.targetReduction || '75% reduction'}</strong>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">Execution Progress</span>
+                    <strong className="text-[#002116]">{selectedFeature.progress ?? 65}%</strong>
+                  </div>
+                  <div className="w-full bg-stone-200 rounded-full h-2">
+                    <div className="bg-[#2E8B68] h-2 rounded-full" style={{ width: `${selectedFeature.progress ?? 65}%` }}></div>
+                  </div>
+                </div>
+
+                <p className="text-stone-700 font-sans text-xs bg-stone-50 p-3 rounded-lg border border-stone-200 leading-relaxed">
+                  {selectedFeature.description}
+                </p>
+
+                <Link
+                  href="/remediation"
+                  className="w-full py-3 bg-[#002116] hover:bg-[#12372a] text-white font-bold rounded-xl text-center block uppercase tracking-wider text-xs transition-colors"
+                >
+                  Open Remediation Engineering Suite →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Footer Action Bar */}
@@ -532,35 +689,72 @@ function MapContent() {
 
           <div className="space-y-2">
             <ToggleRow 
-              label="Monitored Communities" 
+              label={`Communities (${villagesCount})`}
               active={layers.villages} 
               onChange={() => toggleLayer('villages')} 
               icon={<span className="w-2.5 h-2.5 rounded-full bg-[#12372A]" />} 
             />
             <ToggleRow 
-              label="Water Points & Handpumps" 
+              label={`Water Points (${sourcesCount})`} 
               active={layers.waterSources} 
               onChange={() => toggleLayer('waterSources')} 
               icon={<span className="w-2.5 h-2.5 rounded-full bg-[#2E8B68]" />} 
             />
             <ToggleRow 
-              label="Schools & Institutions" 
+              label={`Schools (${schoolsCount})`} 
               active={layers.schools} 
               onChange={() => toggleLayer('schools')} 
               icon={<span>🏫</span>} 
             />
             <ToggleRow 
-              label="Contamination Sources" 
+              label={`Contamination (${contamCount})`} 
               active={layers.contamination} 
               onChange={() => toggleLayer('contamination')} 
               icon={<span>🏭</span>} 
             />
             <ToggleRow 
-              label="Citizen Field Reports" 
+              label={`Citizen Reports (${reportsCount})`} 
               active={layers.reports} 
               onChange={() => toggleLayer('reports')} 
               icon={<span>⚠️</span>} 
             />
+            <ToggleRow 
+              label={`Remediation (${remediationCount})`} 
+              active={layers.remediation} 
+              onChange={() => toggleLayer('remediation')} 
+              icon={<span>🌱</span>} 
+            />
+          </div>
+        </div>
+
+        {/* Locate Me Button */}
+        <button
+          onClick={handleLocateMe}
+          className="absolute bottom-24 right-4 z-10 bg-white p-2.5 rounded-xl shadow-lg border border-slate-200 text-slate-700 hover:text-[#002116] hover:bg-slate-50 transition-colors cursor-pointer"
+          title="Locate my position"
+        >
+          <Navigation className="w-5 h-5 text-[#2E8B68]" />
+        </button>
+
+        {/* Floating Temporal Horizon Slider */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl border border-slate-200 flex items-center gap-4 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#2E8B68]" />
+            <span className="font-bold text-slate-800">Temporal Horizon:</span>
+            <span className="px-2 py-0.5 bg-[#ddf3e7] text-[#002116] rounded font-bold">{year}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-stone-400">2018</span>
+            <input
+              type="range"
+              min="2018"
+              max="2026"
+              step="1"
+              value={year}
+              onChange={(e) => setYear(parseInt(e.target.value))}
+              className="w-36 sm:w-56 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#2E8B68]"
+            />
+            <span className="text-slate-900 font-bold">2026</span>
           </div>
         </div>
 

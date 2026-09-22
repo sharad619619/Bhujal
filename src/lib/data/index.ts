@@ -16,12 +16,16 @@ export {
   demoPredictionResults as predictionResults,
   demoRiskScores as riskScores,
   demoDataSources as dataSources,
+  demoMediaAssets as mediaAssets,
+  demoBotanicalSpecies as botanicalSpecies,
   getVillageById,
   getWaterSourcesByVillage,
   getMeasurementsBySource,
   getReportsByVillage,
   getPredictionForSource,
   getRiskScoreForVillage,
+  getMediaAssets,
+  getBotanicalSpecies,
 } from './demo-data';
 
 // Also export with original names for backward compatibility
@@ -41,4 +45,7 @@ export {
   demoPredictionResults,
   demoRiskScores,
   demoDataSources,
+  demoMediaAssets,
+  demoBotanicalSpecies,
 } from './demo-data';
+

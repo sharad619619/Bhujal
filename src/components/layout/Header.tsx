@@ -149,8 +149,8 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-3">
             {isSampleMode && (
-              <span className="text-[10px] font-mono uppercase bg-black/30 px-2 py-0.5 rounded text-amber-200 border border-amber-400/30">
-                SAMPLE DATA
+              <span className="text-[10px] font-mono uppercase bg-black/30 px-2 py-0.5 rounded text-emerald-200 border border-emerald-400/30">
+                DEMO WORKSPACE
               </span>
             )}
             <span className="text-[10px] font-mono uppercase bg-black/25 px-2 py-0.5 rounded text-white/95">

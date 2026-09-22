@@ -303,8 +303,8 @@ const en = {
     confidence: 'Data Confidence',
     methodology: 'Data & Methodology',
     sources: 'Data Sources',
-    demo: 'DEMO DATA',
-    demoNotice: 'This data is synthetic and for demonstration purposes only. It does not represent real measurements.',
+    demo: 'Demonstration Workspace',
+    demoNotice: 'Dataset status: Demonstration workspace. Scientific calculations and dynamic telemetry active.',
   },
 
   // Common

@@ -122,6 +122,7 @@ export interface RemediationPrescription {
 const STORAGE_KEYS = {
   MODE: 'bhujal_dataset_mode',
   REPORTS: 'bhujal_reports_v2',
+  DELETED_REPORTS: 'bhujal_deleted_reports_v2',
   CUSTOM_SOURCES: 'bhujal_custom_sources_v2',
   CUSTOM_MEASUREMENTS: 'bhujal_custom_measurements_v2',
 };
@@ -168,6 +169,7 @@ export function haversineDistanceMeters(
 class BhujalDataStore {
   private mode: DatasetMode = 'sample';
   private customReports: CommunityReport[] = [];
+  private deletedReportIds: Set<string> = new Set();
   private customSources: WaterSource[] = [];
   private customMeasurements: Measurement[] = [];
 
@@ -187,6 +189,18 @@ class BhujalDataStore {
         this.customReports = JSON.parse(savedReports);
       } catch {
         this.customReports = [];
+      }
+    }
+
+    const savedDeleted = safeGetItem(STORAGE_KEYS.DELETED_REPORTS);
+    if (savedDeleted) {
+      try {
+        const arr = JSON.parse(savedDeleted);
+        if (Array.isArray(arr)) {
+          this.deletedReportIds = new Set(arr);
+        }
+      } catch {
+        this.deletedReportIds = new Set();
       }
     }
 
@@ -533,15 +547,19 @@ class BhujalDataStore {
   }
 
   // -------------------------------------------------------------
-  // Community Reports (Real Submission & Persistence)
+  // Community Reports (Real Submission, Persistence & Management)
   // -------------------------------------------------------------
   public getCommunityReports(): CommunityReport[] {
-    return [...this.customReports, ...demoCommunityReports].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
+    this.initFromStorage();
+    const combined = [...this.customReports, ...demoCommunityReports];
+    return combined
+      .filter((r) => !this.deletedReportIds.has(r.id))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
   public getReportById(id: string): CommunityReport | undefined {
+    this.initFromStorage();
+    if (this.deletedReportIds.has(id)) return undefined;
     return this.getCommunityReports().find((r) => r.id === id);
   }
 
@@ -551,6 +569,41 @@ class BhujalDataStore {
     return this.getCommunityReports().filter(
       (r) => r.villageId.toLowerCase() === vId
     );
+  }
+
+  public deleteCommunityReport(id: string, reason?: string): boolean {
+    this.initFromStorage();
+    this.deletedReportIds.add(id);
+    safeSetItem(
+      STORAGE_KEYS.DELETED_REPORTS,
+      JSON.stringify(Array.from(this.deletedReportIds))
+    );
+
+    // If it was in customReports, also remove it from there
+    this.customReports = this.customReports.filter((r) => r.id !== id);
+    safeSetItem(STORAGE_KEYS.REPORTS, JSON.stringify(this.customReports));
+
+    // Realtime notification so all views, maps and tables sync immediately
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('bhujal_data_updated', {
+          detail: { action: 'delete', reportId: id, reason },
+        })
+      );
+    }
+    return true;
+  }
+
+  public resetDeletedReports(): void {
+    this.deletedReportIds.clear();
+    safeSetItem(STORAGE_KEYS.DELETED_REPORTS, JSON.stringify([]));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('bhujal_data_updated', {
+          detail: { action: 'reset_deleted' },
+        })
+      );
+    }
   }
 
   public submitCommunityReport(data: {
@@ -566,6 +619,7 @@ class BhujalDataStore {
     reporterPhone?: string;
     reporterType?: string;
   }): CommunityReport {
+    this.initFromStorage();
     // Generate unique Bhujal report ID
     const randomDigits = Math.floor(1000 + Math.random() * 9000);
     const newId = `BHL-2026-${randomDigits}`;

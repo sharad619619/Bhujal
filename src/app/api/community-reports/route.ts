@@ -62,3 +62,26 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const reason = searchParams.get('reason') || undefined;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Observation Report ID is required for deletion' },
+        { status: 400 }
+      );
+    }
+
+    const success = db.deleteCommunityReport(id, reason);
+    return NextResponse.json({ success, deletedId: id });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: `Failed to delete report: ${err.message}` },
+      { status: 500 }
+    );
+  }
+}

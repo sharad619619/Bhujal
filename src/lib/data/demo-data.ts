@@ -1014,7 +1014,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur South Basti',
     waterSourceId: 'HP-003',
     coordinates: { lat: 26.4632, lon: 80.3411 },
-    date: '2026-09-15',
+    date: '2026-08-15',
     status: 'Lab Verified',
     priority: 'Critical',
     description: 'Community borewell HP-003 producing water with strong metallic astringency. Two household cattle refused to drink from the trough.',
@@ -1024,7 +1024,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Gram Panchayat Member',
     verificationStatus: 'Lab Spectrometry: 0.19 mg/L Cr(VI)',
     evidenceCount: 1,
-    lastUpdated: '2026-09-16',
+    lastUpdated: '2026-08-16',
     isDemo: true
   },
   {
@@ -1034,7 +1034,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-002',
     locationName: 'Rania North Agricultural Sector',
     coordinates: { lat: 26.4521, lon: 80.3045 },
-    date: '2026-09-12',
+    date: '2026-07-22',
     status: 'Confirmed',
     priority: 'Critical',
     description: 'Approximately 3 tractor trolleys of yellow-green cake sludge dumped along the unpaved boundary between two wheat plots. Wind carrying dust toward adjacent tube-well.',
@@ -1044,7 +1044,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Local Farmer',
     verificationStatus: 'UPPCB District Team Notified',
     evidenceCount: 3,
-    lastUpdated: '2026-09-13',
+    lastUpdated: '2026-07-23',
     isDemo: true
   },
   {
@@ -1055,7 +1055,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Sachendi Main Market Chowk',
     waterSourceId: 'HP-021',
     coordinates: { lat: 26.4258, lon: 80.2541 },
-    date: '2026-09-10',
+    date: '2025-11-09',
     status: 'Under Review',
     priority: 'Medium',
     description: 'Crusty orange-yellow crystalline sediment forming around the brass cylinder mouth of HP-021. Flow becomes cloudy after 20 continuous strokes.',
@@ -1065,7 +1065,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Shop Owner',
     verificationStatus: 'Scheduled for Sampling',
     evidenceCount: 1,
-    lastUpdated: '2026-09-11',
+    lastUpdated: '2025-11-10',
     isDemo: true
   },
   {
@@ -1075,14 +1075,14 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-003',
     locationName: 'Panki Canal Siphon Road',
     coordinates: { lat: 26.4745, lon: 80.2831 },
-    date: '2026-09-08',
+    date: '2025-08-15',
     status: 'Field Verified',
     priority: 'High',
     description: 'Dense greenish-yellow foam bubbling at the discharge outflow into the irrigation feeder canal. Flow rate visibly elevated compared to dry season baselines.',
     hasPhoto: false,reporterType: 'Asha Health Worker',
     verificationStatus: 'Field Survey Conducted',
     evidenceCount: 0,
-    lastUpdated: '2026-09-09',
+    lastUpdated: '2025-08-16',
     isDemo: true
   },
   {
@@ -1092,7 +1092,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-005',
     locationName: 'Rooma Village Community Tank',
     coordinates: { lat: 26.3982, lon: 80.4135 },
-    date: '2026-09-05',
+    date: '2025-04-18',
     status: 'Reported',
     priority: 'Medium',
     description: 'Irridescent greenish-yellow film covering roughly 40 percent of the village retention pond following heavy monsoon showers. Water has pungent chemical sulfur odor.',
@@ -1102,7 +1102,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Pending Inspection',
     evidenceCount: 1,
-    lastUpdated: '2026-09-05',
+    lastUpdated: '2025-04-19',
     isDemo: true
   },
   {
@@ -1113,7 +1113,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur Primary School No. 1',
     waterSourceId: 'HP-002',
     coordinates: { lat: 26.4641, lon: 80.3429 },
-    date: '2026-09-03',
+    date: '2025-01-20',
     status: 'Confirmed',
     priority: 'Critical',
     description: 'School handpump HP-002 dispenses light yellowish water after resting overnight. Handpump was immediately locked by headmaster to prevent children drinking.',
@@ -1123,7 +1123,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'School Headmaster',
     verificationStatus: 'Danger Lock Applied & Tanker Supply Routed',
     evidenceCount: 2,
-    lastUpdated: '2026-09-04',
+    lastUpdated: '2025-01-21',
     isDemo: true
   },
   {
@@ -1133,7 +1133,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-002',
     locationName: 'Rania Industrial Perimeter Drain',
     coordinates: { lat: 26.4468, lon: 80.2995 },
-    date: '2026-08-30',
+    date: '2024-10-12',
     status: 'Field Verified',
     priority: 'High',
     description: 'Percolation of yellow leach liquid observed trickling out of the legacy chrome sludge mound into the open field drain. Soil at seepage point shows heavy mineral crusting.',
@@ -1143,7 +1143,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Local Farmer',
     verificationStatus: 'Samples Collected for ICPOES',
     evidenceCount: 2,
-    lastUpdated: '2026-08-31',
+    lastUpdated: '2024-10-13',
     isDemo: true
   },
   {
@@ -1154,14 +1154,14 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur East Hamlet',
     waterSourceId: 'HP-008',
     coordinates: { lat: 26.4661, lon: 80.3445 },
-    date: '2026-08-27',
+    date: '2024-07-28',
     status: 'Lab Verified',
     priority: 'Critical',
     description: 'Four family members experienced severe skin redness and contact dermatitis after using handpump HP-008 for bathing. Sample submitted to district surveillance lab.',
     hasPhoto: false,reporterType: 'Asha Health Worker',
     verificationStatus: 'Lab Verified: 0.24 mg/L Cr(VI)',
     evidenceCount: 0,
-    lastUpdated: '2026-08-28',
+    lastUpdated: '2024-07-29',
     isDemo: true
   },
   {
@@ -1172,7 +1172,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Sachendi Railway Crossing Cluster',
     waterSourceId: 'HP-025',
     coordinates: { lat: 26.4239, lon: 80.2529 },
-    date: '2026-08-24',
+    date: '2024-05-14',
     status: 'Under Review',
     priority: 'Medium',
     description: 'Tube-well emits distinct synthetic chemical odor when primed in the evening. Water appears clear but residents avoid cooking dal or rice with it.',
@@ -1182,7 +1182,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Field Inspection Queued',
     evidenceCount: 1,
-    lastUpdated: '2026-08-25',
+    lastUpdated: '2024-05-15',
     isDemo: true
   },
   {
@@ -1192,7 +1192,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-003',
     locationName: 'Panki Agricultural Extension',
     coordinates: { lat: 26.4705, lon: 80.2885 },
-    date: '2026-08-20',
+    date: '2024-02-09',
     status: 'Field Verified',
     priority: 'Medium',
     description: 'Mustard seedlings exhibiting severe leaf chlorosis and stunted root elongation within 30m of the industrial effluent canal. Soil pH tested at 8.7.',
@@ -1202,7 +1202,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Local Farmer',
     verificationStatus: 'Soil Core Samples Retrieved',
     evidenceCount: 2,
-    lastUpdated: '2026-08-22',
+    lastUpdated: '2024-02-10',
     isDemo: true
   },
   {
@@ -1213,7 +1213,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Rania Old Basti, Lane 4',
     waterSourceId: 'HP-014',
     coordinates: { lat: 26.4475, lon: 80.3021 },
-    date: '2026-08-16',
+    date: '2023-11-20',
     status: 'Lab Verified',
     priority: 'High',
     description: 'Overnight settling of water in plastic storage containers produces a faint yellow sedimentary film at the base. Source pump is HP-014.',
@@ -1223,7 +1223,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Lab Analysis: 0.12 mg/L Cr(VI)',
     evidenceCount: 1,
-    lastUpdated: '2026-08-18',
+    lastUpdated: '2023-11-21',
     isDemo: true
   },
   {
@@ -1234,7 +1234,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur North Border',
     waterSourceId: 'HP-005',
     coordinates: { lat: 26.4678, lon: 80.3402 },
-    date: '2026-08-12',
+    date: '2023-08-18',
     status: 'Resolved',
     priority: 'Critical',
     description: 'Red danger seal on contaminated pump HP-005 was broken with a crowbar. Immediate resealing requested to prevent migrant workers drinking.',
@@ -1244,7 +1244,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Gram Panchayat Member',
     verificationStatus: 'Welded Cap Applied & Warning Sign Re-erected',
     evidenceCount: 2,
-    lastUpdated: '2026-08-13',
+    lastUpdated: '2023-08-19',
     isDemo: true
   },
   {
@@ -1254,7 +1254,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-003',
     locationName: 'Panki Industrial Area Phase 2',
     coordinates: { lat: 26.4751, lon: 80.2825 },
-    date: '2026-08-08',
+    date: '2023-06-05',
     status: 'Confirmed',
     priority: 'Critical',
     description: 'During heavy cloudburst, untreated yellow liquid was released directly from factory boundary drain into roadside stormwater swale.',
@@ -1264,7 +1264,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Enforcement Action Forwarded to UPPCB',
     evidenceCount: 3,
-    lastUpdated: '2026-08-10',
+    lastUpdated: '2023-06-06',
     isDemo: true
   },
   {
@@ -1275,7 +1275,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Rooma Transport Nagar Approach',
     waterSourceId: 'HP-029',
     coordinates: { lat: 26.3965, lon: 80.4118 },
-    date: '2026-08-04',
+    date: '2023-03-12',
     status: 'Reported',
     priority: 'Medium',
     description: 'Users report sharp chlorinated vapor when pumping water at HP-029. Nearby tire recapping and chemical storage godowns suspected.',
@@ -1284,7 +1284,7 @@ export const demoCommunityReports: CommunityReport[] = [
     mediaAssetId: 'MA-016',reporterType: 'Truck Driver / Commuter',
     verificationStatus: 'Preliminary Screening Logged',
     evidenceCount: 0,
-    lastUpdated: '2026-08-04',
+    lastUpdated: '2023-03-13',
     isDemo: true
   },
   {
@@ -1294,7 +1294,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-002',
     locationName: 'Rania South Fields',
     coordinates: { lat: 26.4442, lon: 80.3005 },
-    date: '2026-07-28',
+    date: '2022-10-25',
     status: 'Field Verified',
     priority: 'High',
     description: 'Water drawn from 18m shallow irrigation bore shows persistent yellow tint. Surface of irrigated soil develops white-yellow crust upon drying.',
@@ -1304,7 +1304,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Local Farmer',
     verificationStatus: 'Soil Salinity 4.8 dS/m Confirmed',
     evidenceCount: 1,
-    lastUpdated: '2026-07-30',
+    lastUpdated: '2022-10-26',
     isDemo: true
   },
   {
@@ -1314,7 +1314,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-004',
     locationName: 'Sachendi Rural Ward 1',
     coordinates: { lat: 26.4271, lon: 80.2562 },
-    date: '2026-07-22',
+    date: '2022-07-14',
     status: 'Field Verified',
     priority: 'High',
     description: 'Laborers excavating foundation trench for pump house struck buried stratum of orange-brown gelatinous sludge at 3.5m depth.',
@@ -1324,7 +1324,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Construction Contractor',
     verificationStatus: 'Work Halted & Site Barricaded',
     evidenceCount: 2,
-    lastUpdated: '2026-07-24',
+    lastUpdated: '2022-07-15',
     isDemo: true
   },
   {
@@ -1335,7 +1335,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur Western Colony',
     waterSourceId: 'HP-009',
     coordinates: { lat: 26.4635, lon: 80.3392 },
-    date: '2026-07-15',
+    date: '2022-04-08',
     status: 'Confirmed',
     priority: 'Critical',
     description: 'Newly installed 15m handpump yielded yellow water on initial pump-out. Driller failed to seal through the upper unconfined aquifer layer.',
@@ -1345,7 +1345,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Source Decommissioned by Block Dev Officer',
     evidenceCount: 1,
-    lastUpdated: '2026-07-17',
+    lastUpdated: '2022-04-09',
     isDemo: true
   },
   {
@@ -1356,7 +1356,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Panki Gaushala Cluster',
     waterSourceId: 'HP-011',
     coordinates: { lat: 26.4729, lon: 80.2842 },
-    date: '2026-07-09',
+    date: '2022-01-19',
     status: 'Under Review',
     priority: 'Medium',
     description: 'Multi-colored oil/chemical sheen floating on cement water tank supplied by handpump HP-011. Livestock herdsman noticed reduced water intake by cows.',
@@ -1365,7 +1365,7 @@ export const demoCommunityReports: CommunityReport[] = [
     mediaAssetId: 'MA-020',reporterType: 'Asha Health Worker',
     verificationStatus: 'Inspection Scheduled',
     evidenceCount: 0,
-    lastUpdated: '2026-07-10',
+    lastUpdated: '2022-01-20',
     isDemo: true
   },
   {
@@ -1376,7 +1376,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Rania Central Mohalla',
     waterSourceId: 'HP-017',
     coordinates: { lat: 26.4491, lon: 80.3018 },
-    date: '2026-07-01',
+    date: '2021-10-04',
     status: 'Lab Verified',
     priority: 'High',
     description: 'Cooked white rice turns greyish-yellow within 2 hours when boiled with water from HP-017. Taste is notably alkaline and bitter.',
@@ -1386,7 +1386,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Ward Resident',
     verificationStatus: 'Lab Verified: 0.16 mg/L Cr(VI)',
     evidenceCount: 1,
-    lastUpdated: '2026-07-03',
+    lastUpdated: '2021-10-05',
     isDemo: true
   },
   {
@@ -1397,7 +1397,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Rooma Industrial Border Hamlet',
     waterSourceId: 'HP-031',
     coordinates: { lat: 26.3995, lon: 80.4148 },
-    date: '2026-06-25',
+    date: '2021-06-16',
     status: 'Resolved',
     priority: 'Medium',
     description: 'Galvanized riser pipe pulled out for repair exhibited deep pitting corrosion and dense orange-yellow mineral crusting along lower 6 meters.',
@@ -1407,7 +1407,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Tube-well Mechanic',
     verificationStatus: 'Riser Pipe Replaced with UPVC & Strainer Cleaned',
     evidenceCount: 1,
-    lastUpdated: '2026-06-27',
+    lastUpdated: '2021-06-17',
     isDemo: true
   },
   {
@@ -1417,7 +1417,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-003',
     locationName: 'Panki North Drain Bridge',
     coordinates: { lat: 26.4735, lon: 80.2871 },
-    date: '2026-06-18',
+    date: '2021-02-28',
     status: 'Confirmed',
     priority: 'Critical',
     description: 'High pressure discharge from industrial stormwater outlet caused backflow of greenish wastewater into the village irrigation culvert.',
@@ -1427,7 +1427,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Gram Panchayat Member',
     verificationStatus: 'Backflow Flap Gate Installed by District Irrigation',
     evidenceCount: 2,
-    lastUpdated: '2026-06-20',
+    lastUpdated: '2021-03-01',
     isDemo: true
   },
   {
@@ -1437,7 +1437,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-004',
     locationName: 'Sachendi East Agriculture Belt',
     coordinates: { lat: 26.4265, lon: 80.2555 },
-    date: '2026-06-11',
+    date: '2020-11-12',
     status: 'Under Review',
     priority: 'High',
     description: 'Rotary drilling rig hit water strike at 14m depth that was bright yellow. Rig operator discontinued drilling and requested groundwater officer inspection.',
@@ -1447,7 +1447,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Drilling Contractor',
     verificationStatus: 'Sampling Team Dispatched',
     evidenceCount: 1,
-    lastUpdated: '2026-06-12',
+    lastUpdated: '2020-11-13',
     isDemo: true
   },
   {
@@ -1457,7 +1457,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-001',
     locationName: 'Khanchandpur Industrial Fringe',
     coordinates: { lat: 26.4682, lon: 80.3435 },
-    date: '2026-06-03',
+    date: '2020-08-20',
     status: 'Field Verified',
     priority: 'Medium',
     description: 'Intense chemical odor emanating from unsealed concrete basins in abandoned tannery compound. Vapor strongest after sunset when ground cools.',
@@ -1466,7 +1466,7 @@ export const demoCommunityReports: CommunityReport[] = [
     mediaAssetId: 'MA-025',reporterType: 'Ward Resident',
     verificationStatus: 'Fencing Verified; Neutralization Scheduled',
     evidenceCount: 0,
-    lastUpdated: '2026-06-05',
+    lastUpdated: '2020-08-21',
     isDemo: true
   },
   {
@@ -1476,7 +1476,7 @@ export const demoCommunityReports: CommunityReport[] = [
     villageId: 'V-002',
     locationName: 'Rania Bypass Link Road',
     coordinates: { lat: 26.4498, lon: 80.3032 },
-    date: '2026-05-27',
+    date: '2020-05-18',
     status: 'Resolved',
     priority: 'High',
     description: 'Tannery tanker spillage created an amber puddle across 50 meters of the village link road. Soil was scraped and lime buffer applied by municipality.',
@@ -1486,7 +1486,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Gram Panchayat Member',
     verificationStatus: 'Neutralized with Lime & Re-tarred',
     evidenceCount: 2,
-    lastUpdated: '2026-05-29',
+    lastUpdated: '2020-05-19',
     isDemo: true
   },
   {
@@ -1497,7 +1497,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Rooma Main Bazaar Well',
     waterSourceId: 'HP-033',
     coordinates: { lat: 26.3978, lon: 80.4125 },
-    date: '2026-05-19',
+    date: '2020-03-10',
     status: 'Lab Verified',
     priority: 'High',
     description: 'Deep open well used for secondary washing displays faint greenish-yellow tint in direct sunlight. Test shows elevated chromium and sulfate.',
@@ -1507,7 +1507,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'School Headmaster',
     verificationStatus: 'Lab Verified: 0.11 mg/L Cr(VI)',
     evidenceCount: 1,
-    lastUpdated: '2026-05-21',
+    lastUpdated: '2020-03-11',
     isDemo: true
   },
   {
@@ -1518,7 +1518,7 @@ export const demoCommunityReports: CommunityReport[] = [
     locationName: 'Khanchandpur Dairy Cooperative',
     waterSourceId: 'HP-007',
     coordinates: { lat: 26.4655, lon: 80.3418 },
-    date: '2026-05-12',
+    date: '2020-01-15',
     status: 'Resolved',
     priority: 'Critical',
     description: 'Cooperative cattle trough fed by HP-007 showed yellow flocculent settle out. Pump was marked Do Not Use and piped safe water line was extended.',
@@ -1528,7 +1528,7 @@ export const demoCommunityReports: CommunityReport[] = [
     reporterType: 'Dairy Cooperative Secretary',
     verificationStatus: 'Alternative Supply Connected; Well Capped',
     evidenceCount: 2,
-    lastUpdated: '2026-05-14',
+    lastUpdated: '2020-01-16',
     isDemo: true
   }
 ];

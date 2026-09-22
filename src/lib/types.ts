@@ -82,6 +82,9 @@ export interface GroundwaterPoint {
   name: string;
   coordinates: { lat: number; lon: number };
   depth: number;
+  depthM?: number;
+  location?: { lat: number; lon: number };
+  dataStatus?: string;
   villageId: string;
   isDemo: boolean;
 }
@@ -134,6 +137,8 @@ export interface ContaminationSource {
   coordinates: { lat: number; lon: number };
   status: string;
   estimatedImpactRadius: number;
+  description?: string;
+  location?: { lat: number; lon: number };
   isDemo: boolean;
 }
 
@@ -183,6 +188,8 @@ export interface CommunityReport {
   hasPhoto?: boolean;
   photoUrl?: string;
   photoDataUrl?: string;
+  photoTag?: string;
+  isSynthetic?: boolean;
   verified?: boolean;
   verificationStatus?: string;
   evidenceCount?: number;

@@ -606,6 +606,16 @@ class BhujalDataStore {
     }
   }
 
+  public getDeletedReportsCount(): number {
+    this.initFromStorage();
+    return this.deletedReportIds.size;
+  }
+
+  public getDeletedReportIds(): string[] {
+    this.initFromStorage();
+    return Array.from(this.deletedReportIds);
+  }
+
   public submitCommunityReport(data: {
     category: string;
     description: string;
@@ -1303,6 +1313,8 @@ export type WaterSourceRecord = WaterSource;
 export type CommunityReportRecord = CommunityReport & {
   locationName?: string;
   photoUrl?: string;
+  photoTag?: string;
+  isSynthetic?: boolean;
   verified?: boolean;
   reporterName?: string;
   reporterPhone?: string;

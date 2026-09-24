@@ -254,8 +254,13 @@ export interface BotanicalSpecies {
   commonName: string;
   hindiName?: string;
   photoUrl: string;
+  galleryUrls?: string[];
+  candidateType?: 'Hyperaccumulator' | 'Phytoextractor' | 'Phytostabilizer' | 'Wetland Treatment' | 'Rhizofiltration' | 'Metal-Tolerant Buffer';
+  taxonomicNote?: string;
   source: string;
   license: string;
+  attribution?: string;
+  verificationStatus?: string;
   preferredPhMin: number;
   preferredPhMax: number;
   preferredMoistureMin: number;
@@ -266,4 +271,40 @@ export interface BotanicalSpecies {
   mechanism: string;
   agronomicCare: string;
   citations: string[];
+  limitations?: string[];
+  fieldValidationRequired?: string[];
+  siteSuitabilitySummary?: string;
+}
+
+export interface EngineeredIntervention {
+  id: string | number;
+  title: string;
+  shortDesc: string;
+  category: 'Nature-Based' | 'Engineering' | 'Water Supply' | 'Monitoring';
+  status: 'Field Validated' | 'Pilot Stage' | 'Standard Practice' | 'Continuous Telemetry';
+  readinessLevel: string;
+  primaryMechanism: string;
+  howItWorks: string;
+  whereUsed: string;
+  siteConditionsRequired: {
+    phRange: string;
+    soilPermeability: string;
+    waterTableDepth: string;
+    crConcentrationRange: string;
+    surfaceAreaRequired: string;
+  };
+  advantages: string[];
+  limitations: string[];
+  maintenance: string[];
+  monitoringRequirements: string[];
+  potentialRisks: string[];
+  evidenceLevel: 'High' | 'Moderate' | 'Field Confirmed';
+  researchReferences: string[];
+  imageUrl: string;
+  imageAlt: string;
+  imageCaption: string;
+  imageAttribution: string;
+  iconName: string;
+  accentColor: string;
+  bgLight: string;
 }

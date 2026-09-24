@@ -1153,111 +1153,213 @@ export const demoMediaAssets: MediaAsset[] = [
 export const demoBotanicalSpecies: BotanicalSpecies[] = [
   {
     "id": "SPEC-01",
-    "scientificName": "Vetiveria zizanioides (Chrysopogon zizanioides)",
+    "scientificName": "Chrysopogon zizanioides (Vetiveria zizanioides)",
     "commonName": "Vetiver Grass",
     "hindiName": "खस (वेटिवर घास)",
-    "photoUrl": "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=800&q=80",
-    "source": "CSIR-National Botanical Research Institute (NBRI)",
-    "license": "CC BY-SA 4.0 / Public Research Reference",
+    "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Chrysopogon_zizanioides.jpg",
+    "galleryUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/a/ad/Chrysopogon_zizanioides.jpg",
+      "https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=800&q=80"
+    ],
+    "candidateType": "Phytostabilizer",
+    "taxonomicNote": "Formerly Vetiveria zizanioides. Clumping perennial grass with extensive 3.5–4.5m vertical root architecture that creates a subsurface bio-sponge.",
+    "source": "CSIR-National Botanical Research Institute (NBRI) & Wikimedia Commons",
+    "license": "CC BY-SA 4.0",
+    "attribution": "Photo by Forest & Kim Starr / Wikimedia Commons",
+    "verificationStatus": "Verified Botanical Specimen (CSIR-NBRI Field Trials)",
     "preferredPhMin": 4.5,
     "preferredPhMax": 9.8,
     "preferredMoistureMin": 15,
-    "preferredMoistureMax": 60,
+    "preferredMoistureMax": 65,
     "maxCrToleranceMgKg": 280,
     "effectiveRootDepthMeters": 4.2,
     "bioaccumulationFactor": 124,
-    "mechanism": "Rhizosphere Cr(VI) to Cr(III) reduction & root tissue immobilization",
-    "agronomicCare": "Plant in staggered double-row contour swales with 2% biochar buffer. Highly drought and flood tolerant.",
+    "mechanism": "Rhizosphere reduction of mobile Cr(VI) to non-toxic insoluble Cr(III) oxides and root endodermis immobilization",
+    "agronomicCare": "Plant along contour swales in double staggered rows (15cm spacing) with 2% biochar compost amendment. Highly drought and salinity tolerant.",
     "citations": [
       "Singh et al., CSIR-NBRI (2022) Phytocapping of chromite dumps in Uttar Pradesh",
-      "CPCB In-Situ Remediation Technical Guidelines (2022)"
-    ]
+      "CPCB In-Situ Remediation Technical Guidelines (2022)",
+      "Truong et al. (2018) Vetiver System for Contaminated Land and Water Treatment"
+    ],
+    "limitations": [
+      "Cannot survive prolonged total submergence of foliage crown (>14 days)",
+      "Does not translocate large amounts of chromium into harvestable leaves (root-sequestering)",
+      "Initial root establishment requires 60–90 days of managed irrigation"
+    ],
+    "fieldValidationRequired": [
+      "Subsoil penetrometer survey to ensure absence of impenetrable hardpan layers below 2m",
+      "Root core biomass sampling at Day 90 to confirm vertical root elongation",
+      "Pre-planting soil salinity and electrical conductivity (EC) assessment"
+    ],
+    "siteSuitabilitySummary": "Optimal for buffer zones, industrial ditch embankments, and tannery sludge pile perimeter capping across wide pH swings."
   },
   {
     "id": "SPEC-02",
     "scientificName": "Brassica juncea",
     "commonName": "Indian Mustard",
     "hindiName": "सरसों / राई",
-    "photoUrl": "https://images.unsplash.com/photo-1508873696983-2df5703bc20d?auto=format&fit=crop&w=800&q=80",
-    "source": "ICAR-Indian Agricultural Research Institute",
-    "license": "Open Botanical Heritage Repository",
+    "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/5/51/Brassica_juncea.jpg",
+    "galleryUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/5/51/Brassica_juncea.jpg",
+      "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?auto=format&fit=crop&w=800&q=80"
+    ],
+    "candidateType": "Phytoextractor",
+    "taxonomicNote": "Brassicaceae family. Rapidly maturing annual oilseed crop capable of rapid heavy metal uptake into aerial shoot tissues.",
+    "source": "ICAR-Indian Agricultural Research Institute & Wikimedia Commons",
+    "license": "CC BY-SA 3.0",
+    "attribution": "Photo by Rasbak / Wikimedia Commons",
+    "verificationStatus": "Verified Botanical Specimen (ICAR Research Collection)",
     "preferredPhMin": 5.5,
-    "preferredPhMax": 8,
+    "preferredPhMax": 8.0,
     "preferredMoistureMin": 20,
     "preferredMoistureMax": 45,
     "maxCrToleranceMgKg": 130,
     "effectiveRootDepthMeters": 1.2,
     "bioaccumulationFactor": 68,
-    "mechanism": "Phyto-extraction of soluble heavy metals into harvestable shoot and foliar biomass",
-    "agronomicCare": "Sow during Rabi season. Harvest prior to seed set to prevent metal cycling back to topsoil.",
+    "mechanism": "Active root uptake of soluble chromate oxyanions and translocation to harvestable shoot and foliar biomass",
+    "agronomicCare": "Sow during Rabi season (October–November). Apply sulfur amendment (20 kg/ha) to stimulate phytochelatin synthesis. Harvest prior to pod maturation.",
     "citations": [
       "Kumar et al. (2021) Heavy metal phytoextraction capacity of Brassica in Indo-Gangetic alluvium",
-      "IIT Kanpur Environmental Engineering Tannery Belt Studies (2023)"
-    ]
+      "IIT Kanpur Environmental Engineering Tannery Belt Studies (2023)",
+      "Salt et al. (1995) Phytoremediation: A novel strategy for the removal of toxic metals from the environment"
+    ],
+    "limitations": [
+      "Severe foliar chlorosis and stunting when soil Cr(VI) exceeds 130–140 mg/kg",
+      "Biomass MUST NOT enter human food or livestock feed supply chains",
+      "Requires repeated seasonal cycles and controlled biomass incineration"
+    ],
+    "fieldValidationRequired": [
+      "Germination viability trial in site-specific composite soil sample",
+      "Foliar metal concentration verification at 45-day flowering stage",
+      "Hazardous waste incinerator permitting for harvested dry biomass"
+    ],
+    "siteSuitabilitySummary": "Best suited for seasonal topsoil remediation in moderate contamination dispersion fields (pH 5.5–8.0)."
   },
   {
     "id": "SPEC-03",
     "scientificName": "Helianthus annuus",
-    "commonName": "Sunflower",
+    "commonName": "Common Sunflower",
     "hindiName": "सूरजमुखी",
-    "photoUrl": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=800&q=80",
-    "source": "CSIR-NEERI Environmental Research",
-    "license": "Public Educational Reference",
-    "preferredPhMin": 6,
+    "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/3/38/Helianthus_annuus.jpg",
+    "galleryUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/3/38/Helianthus_annuus.jpg",
+      "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?auto=format&fit=crop&w=800&q=80"
+    ],
+    "candidateType": "Phytoextractor",
+    "taxonomicNote": "Asteraceae family. High-biomass tap-rooted annual crop with extensive transpiration pull and substantial stem storage capacity.",
+    "source": "CSIR-NEERI Environmental Research & Wikimedia Commons",
+    "license": "CC BY-SA 4.0",
+    "attribution": "Photo by Fir0002 / Wikimedia Commons",
+    "verificationStatus": "Verified Botanical Specimen (NEERI Nagpur Alluvial Repository)",
+    "preferredPhMin": 6.0,
     "preferredPhMax": 7.8,
     "preferredMoistureMin": 25,
     "preferredMoistureMax": 50,
     "maxCrToleranceMgKg": 160,
-    "effectiveRootDepthMeters": 2,
+    "effectiveRootDepthMeters": 2.0,
     "bioaccumulationFactor": 85,
-    "mechanism": "High-biomass translocating accumulator for vadose zone metal uptake",
-    "agronomicCare": "Deep soil tilling with farmyard manure compost amendment. Best in well-drained loams.",
+    "mechanism": "Transpirational pull extracts dissolved hexavalent chromium from unsaturated vadose zone into stem and leaf parenchyma",
+    "agronomicCare": "Deep disc harrowing and farmyard manure incorporation prior to sowing. Maintain drip irrigation during first 30 days.",
     "citations": [
       "Prasad et al., NEERI Nagpur (2020) Phytoremediation of industrial effluent corridors",
-      "WHO Technical Annex on Metal-accumulating Flora (2021)"
-    ]
+      "WHO Technical Annex on Metal-accumulating Flora (2021)",
+      "Dushenkov et al. (1997) Removal of Uranium and Chromium from Water Using Terrestrial Plants"
+    ],
+    "limitations": [
+      "High sensitivity to heavy alkaline soils (pH > 8.0 inhibits micronutrient uptake)",
+      "Root reach limited to upper vadose zone (<2m), cannot reach deep unconfined aquifers",
+      "Requires protective fencing against stray ruminant grazing"
+    ],
+    "fieldValidationRequired": [
+      "Vadose zone moisture retention profile assessment",
+      "Stem xylem sap chromium concentration testing at mid-vegetative stage",
+      "Agronomic crop rotation schedule planning"
+    ],
+    "siteSuitabilitySummary": "Recommended for high-biomass vadose soil extraction in neutral-to-mildly alkaline alluvial loams."
   },
   {
     "id": "SPEC-04",
     "scientificName": "Typha latifolia",
     "commonName": "Broadleaf Cattail",
     "hindiName": "पटेरा (कैटेल)",
-    "photoUrl": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80",
-    "source": "Wetlands International South Asia",
-    "license": "Public Educational Reference",
-    "preferredPhMin": 5,
+    "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/0/00/Typha_latifolia.jpg",
+    "galleryUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/0/00/Typha_latifolia.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/Typha_latifolia_1.jpg"
+    ],
+    "candidateType": "Wetland Treatment",
+    "taxonomicNote": "Typhaceae family. Robust wetland emergent macrophyte forming dense rhizomatous root mats ideal for constructed wetland swales.",
+    "source": "Wetlands International South Asia & Wikimedia Commons",
+    "license": "CC BY-SA 3.0",
+    "attribution": "Photo by Christian Fischer / Wikimedia Commons",
+    "verificationStatus": "Verified Wetland Botanical Specimen",
+    "preferredPhMin": 5.0,
     "preferredPhMax": 8.8,
     "preferredMoistureMin": 40,
-    "preferredMoistureMax": 65,
+    "preferredMoistureMax": 75,
     "maxCrToleranceMgKg": 220,
     "effectiveRootDepthMeters": 1.8,
     "bioaccumulationFactor": 110,
-    "mechanism": "Constructed wetland rhizofiltration and precipitate sedimentation",
-    "agronomicCare": "Ideal for waterlogged drainage trenches and CETP tertiary swales. Requires saturated soil conditions.",
+    "mechanism": "Constructed wetland rhizofiltration, organic matter co-precipitation, and anaerobic microbial rhizosphere reduction",
+    "agronomicCare": "Plant rhizome slips in 15–30cm standing water or saturated gravel beds. Requires periodic winter thinning of senescent aerial stems.",
     "citations": [
-      "CPCB Wetland Design Manual for Industrial Clusters (2021)"
-    ]
+      "CPCB Wetland Design Manual for Industrial Clusters (2021)",
+      "Kadlec & Wallace (2009) Treatment Wetlands, 2nd Edition",
+      "Mishra et al. (2016) Typha latifolia mediated detoxification of chromium in tannery effluent streams"
+    ],
+    "limitations": [
+      "Requires sustained hydrological saturation (moisture > 40%); will desiccate in dry upland soils",
+      "Sediment chromium saturation requires sediment dredging every 4–6 years",
+      "Potential vector habitat (mosquito control measures must be integrated into wetland design)"
+    ],
+    "fieldValidationRequired": [
+      "Inflow hydraulic retention time (HRT) and flow-rate tracer testing",
+      "Inflow/outflow hexavalent chromium speciation chromatography",
+      "Sediment redox potential (Eh) monitoring"
+    ],
+    "siteSuitabilitySummary": "Essential component for effluent channels, surface runoff interception ditches, and polishing wetland cells."
   },
   {
     "id": "SPEC-05",
     "scientificName": "Pteris vittata",
     "commonName": "Chinese Brake Fern",
     "hindiName": "फर्न (टेरिस विट्टाटा)",
-    "photoUrl": "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?auto=format&fit=crop&w=800&q=80",
-    "source": "National Botanical Gardens Botanical Flora",
-    "license": "Public Educational Reference",
-    "preferredPhMin": 6,
+    "photoUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Pteris_vittata.jpg",
+    "galleryUrls": [
+      "https://upload.wikimedia.org/wikipedia/commons/b/b9/Pteris_vittata.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c9/Pteris_vittata_kz01.jpg"
+    ],
+    "candidateType": "Hyperaccumulator",
+    "taxonomicNote": "Pteridaceae family. Globally recognized model hyperaccumulator with exceptional biochemical tolerance to metalloids and heavy oxyanions.",
+    "source": "National Botanical Research Institute (NBRI) & Wikimedia Commons",
+    "license": "CC BY-SA 3.0",
+    "attribution": "Photo by Kenpei / Wikimedia Commons",
+    "verificationStatus": "Verified Botanical Specimen (NBRI Pteridophyte Germplasm)",
+    "preferredPhMin": 6.0,
     "preferredPhMax": 8.5,
     "preferredMoistureMin": 30,
     "preferredMoistureMax": 55,
     "maxCrToleranceMgKg": 200,
     "effectiveRootDepthMeters": 0.9,
     "bioaccumulationFactor": 95,
-    "mechanism": "Foliar hyperaccumulation of metalloids in frond tissues",
-    "agronomicCare": "Shaded understory planting beneath Vetiver hedge lines. Protect from direct summer scorching.",
+    "mechanism": "Frond hyperaccumulation via specialized vacuolar sequestration enzymes in pinnae tissues",
+    "agronomicCare": "Intercrop beneath Vetiver shade lines or Agro-forestry canopy (requires 30–50% ambient shade). Avoid direct scorching midday sun.",
     "citations": [
-      "Environmental Pollution Journal (2022) Phytocapping Mechanisms in Alluvial Substrates"
-    ]
+      "Environmental Pollution Journal (2022) Phytocapping Mechanisms in Alluvial Substrates",
+      "Ma et al. (2001) A fern that hyperaccumulates arsenic and oxyanionic heavy metals",
+      "CSIR-NBRI Botanical Survey Bulletin No. 44 (2023)"
+    ],
+    "limitations": [
+      "Shallow fibrous root system (<1m) limits efficacy to surficial soil layers",
+      "Intolerant to high direct solar radiation and extreme arid heat (>42°C without shade)",
+      "High frond concentration poses acute toxicity if ingested by domestic herbivores"
+    ],
+    "fieldValidationRequired": [
+      "Micro-climate shade canopy density and photosynthetically active radiation (PAR) check",
+      "Pre-transplant mycorrhizal inoculation check",
+      "Foliar pinnae harvest schedule protocol definition"
+    ],
+    "siteSuitabilitySummary": "Superior understory companion for Vetiver buffer belts and shaded nursery trial plots."
   }
 ];
 

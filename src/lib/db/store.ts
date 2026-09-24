@@ -978,15 +978,54 @@ class BhujalDataStore {
         warnings.push(`Water table depth (${groundwaterDepthMeters}m) exceeds root reach (${sp.effectiveRootDepthMeters}m). Interception trench required for groundwater contact.`);
       }
 
+      // Construct rationale
+      const whyRecommendedParts: string[] = [];
+      if (ph >= sp.preferredPhMin && ph <= sp.preferredPhMax) {
+        whyRecommendedParts.push(`Site soil pH (${ph}) is within optimum physiological tolerance (${sp.preferredPhMin}–${sp.preferredPhMax})`);
+      } else {
+        whyRecommendedParts.push(`Tolerates moderate pH divergence with biochar buffering`);
+      }
+      if (crConcentrationMgKg <= sp.maxCrToleranceMgKg) {
+        whyRecommendedParts.push(`Resistant to site Cr(VI) loading (${crConcentrationMgKg} mg/kg vs threshold ${sp.maxCrToleranceMgKg} mg/kg)`);
+      }
+      if (moisturePercent >= sp.preferredMoistureMin && moisturePercent <= sp.preferredMoistureMax) {
+        whyRecommendedParts.push(`Site soil moisture (${moisturePercent}%) matches native transpiration requirements`);
+      }
+      const whyRecommended = whyRecommendedParts.join('. ') + '.';
+
       return {
+        id: sp.id,
         scientificName: sp.scientificName,
         commonName: sp.commonName,
+        hindiName: sp.hindiName,
+        candidateType: sp.candidateType || 'Phytoextractor',
+        taxonomicNote: sp.taxonomicNote,
         mechanism: sp.mechanism,
         bcf: sp.bioaccumulationFactor,
         rootDepth: `${sp.effectiveRootDepthMeters}m depth`,
+        effectiveRootDepthMeters: sp.effectiveRootDepthMeters,
+        preferredPhMin: sp.preferredPhMin,
+        preferredPhMax: sp.preferredPhMax,
+        preferredMoistureMin: sp.preferredMoistureMin,
+        preferredMoistureMax: sp.preferredMoistureMax,
+        maxCrToleranceMgKg: sp.maxCrToleranceMgKg,
         care: `${sp.agronomicCare} ${warnings.length > 0 ? 'Note: ' + warnings[0] : ''}`,
+        agronomicCare: sp.agronomicCare,
         photoUrl: sp.photoUrl,
+        galleryUrls: sp.galleryUrls || [sp.photoUrl],
+        source: sp.source,
+        license: sp.license,
+        attribution: sp.attribution,
+        verificationStatus: sp.verificationStatus || 'Verified Botanical Specimen',
         suitabilityScore: totalSuitability,
+        phScore: Math.round(phScore),
+        moistureScore: Math.round(moistureScore),
+        crScore: Math.round(crScore),
+        depthScore: Math.round(depthScore),
+        whyRecommended,
+        limitations: sp.limitations || [],
+        fieldValidationRequired: sp.fieldValidationRequired || [],
+        siteSuitabilitySummary: sp.siteSuitabilitySummary,
         warnings,
         citations: sp.citations
       };

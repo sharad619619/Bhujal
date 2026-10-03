@@ -172,8 +172,14 @@ export default function Header() {
           {/* Logo and Brand */}
           <div className="flex items-center gap-4 shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shadow-inner">
-                <span className="material-symbols-outlined text-[20px]">layers</span>
+              <div className="w-8 h-9 shrink-0 rounded-md overflow-hidden bg-[#01261E] flex items-center justify-center shadow-xs">
+                <img
+                  src="/logo.png"
+                  alt="Bhujal AI Logo"
+                  width={242}
+                  height={310}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-serif tracking-tight font-bold text-white flex items-center gap-1.5">

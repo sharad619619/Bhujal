@@ -31,10 +31,21 @@ export default function AboutPage() {
         </div>
 
         {/* Hero */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <span className="px-3 py-1 rounded-full text-xs font-mono uppercase bg-[#ddf3e7] text-[#002116] font-bold border border-stone-200 inline-block">
-            Scientific Foundation
-          </span>
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="mx-auto w-14 h-18 rounded-2xl bg-[#01261E] p-1.5 flex items-center justify-center shadow-lg ring-4 ring-emerald-500/10">
+            <img
+              src="/logo.png"
+              alt="Bhujal AI Official Logo"
+              width={242}
+              height={310}
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div>
+            <span className="px-3 py-1 rounded-full text-xs font-mono uppercase bg-[#ddf3e7] text-[#002116] font-bold border border-stone-200 inline-block">
+              Scientific Foundation
+            </span>
+          </div>
           <h1 className="text-3xl sm:text-5xl font-serif font-bold text-[#002116] tracking-tight">
             About Bhujal AI
           </h1>

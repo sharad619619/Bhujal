@@ -337,7 +337,15 @@ export default function MapSidebar({
       <div className="p-4 border-b border-slate-200 bg-[#002116] text-white flex items-center justify-between">
         <div>
           <h2 className="font-serif font-bold text-base text-white tracking-tight flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <div className="w-5 h-6 shrink-0 rounded-xs overflow-hidden bg-[#01261E] flex items-center justify-center">
+              <img
+                src="/logo.png"
+                alt="Bhujal AI Logo"
+                width={242}
+                height={310}
+                className="w-full h-full object-contain"
+              />
+            </div>
             Subsurface Intelligence
           </h2>
           <span className="text-[10px] text-emerald-300 font-mono">

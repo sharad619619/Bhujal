@@ -15,8 +15,14 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="sm:col-span-2 lg:col-span-1 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 flex items-center justify-center font-bold shadow-inner">
-                <span className="material-symbols-outlined text-[20px]">layers</span>
+              <div className="w-8 h-9 shrink-0 rounded-md overflow-hidden bg-[#01261E] flex items-center justify-center shadow-xs">
+                <img
+                  src="/logo.png"
+                  alt="Bhujal AI Logo"
+                  width={242}
+                  height={310}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="text-xl font-serif font-bold text-white tracking-tight">
                 Bhujal AI

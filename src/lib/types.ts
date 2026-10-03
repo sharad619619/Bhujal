@@ -304,7 +304,17 @@ export interface EngineeredIntervention {
   imageAlt: string;
   imageCaption: string;
   imageAttribution: string;
+  imageMetadata?: {
+    technology: string;
+    imageSource: string;
+    sourceUrl: string;
+    license: string;
+    attribution: string;
+    imageType: 'photograph' | 'technical_diagram';
+    verificationStatus: 'verified';
+  };
   iconName: string;
   accentColor: string;
   bgLight: string;
 }
+

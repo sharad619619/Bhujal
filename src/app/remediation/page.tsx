@@ -101,10 +101,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'CGWB (Central Ground Water Board) Deep Aquifer Exploration in Indo-Gangetic Plains (2021)',
       'IIT Kanpur Hydrogeological Aquitard Integrity Study (2023)'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80',
-    imageAlt: 'Deep hydrogeological tube well drilling and casing installation rig',
-    imageCaption: 'Deep rotary drilling rig installing telescoping casing through confining clay aquitard',
-    imageAttribution: 'Industrial Geoscience Photo Archive',
+    imageUrl: '/images/remediation/deep_aquifer_borewell.jpg',
+    imageAlt: 'Deep hydrogeological tube well drilling rig in operation installing steel casing in India',
+    imageCaption: 'Heavy rotary borewell rig drilling through alluvial strata to tap confined deep aquifer',
+    imageAttribution: 'Amrith Raj / Wikimedia Commons (CC BY-SA 3.0)',
+    imageMetadata: {
+      technology: 'Safe Deep Aquifer Supply',
+      imageSource: 'Wikimedia Commons (File:Rig drilling known locally as Borewell for Water well drilling in operation in India.jpg)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Rig_drilling_known_locally_as_Borewell_for_Water_well_drilling_in_operation_in_India.jpg',
+      license: 'CC BY-SA 3.0',
+      attribution: 'Amrith Raj',
+      imageType: 'photograph',
+      verificationStatus: 'verified'
+    },
     iconName: 'Droplets',
     accentColor: '#006492',
     bgLight: 'bg-sky-50'
@@ -153,10 +162,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'US EPA Remediation Technology Cost and Performance: Zero-Valent Iron PRBs (2020)',
       'IIT Kanpur Environmental Engineering: Cr(VI) Reduction by Granular ZVI in Gangetic Sands (2022)'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=800&q=80',
-    imageAlt: 'Subsurface permeable reactive barrier trench excavation with granular reactive iron media',
-    imageCaption: 'Trench excavation and reactive iron/sand media installation for passive groundwater plume interception',
-    imageAttribution: 'Groundwater Remediation Engineering Archive',
+    imageUrl: '/images/remediation/prb_iron_wall_schematic.png',
+    imageAlt: 'Engineering schematic diagram of zero-valent iron permeable reactive barrier configurations intersecting contaminated groundwater plume',
+    imageCaption: 'Engineering schematics of continuous and funnel-and-gate zero-valent iron (ZVI) PRB configurations',
+    imageAttribution: 'Paul G. Tratnyek / Tratnyek Research Group (CC BY 3.0)',
+    imageMetadata: {
+      technology: 'Permeable Reactive Barriers (PRB)',
+      imageSource: 'Wikimedia Commons (File:Iron Wall Types 2.PNG)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Iron_Wall_Types_2.PNG',
+      license: 'CC BY 3.0',
+      attribution: 'Paul G. Tratnyek / Tratnyek Research Group',
+      imageType: 'technical_diagram',
+      verificationStatus: 'verified'
+    },
     iconName: 'Box',
     accentColor: '#b45309',
     bgLight: 'bg-amber-50'
@@ -207,10 +225,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'CSIR-NBRI Lucknow Field Guide: Vetiver System in Chrome Sludge Management (2022)',
       'Truong & Danh (2015) The Vetiver System for Environmental Protection and Mine Rehabilitation'
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ad/Chrysopogon_zizanioides.jpg',
-    imageAlt: 'Dense vegetative buffer belts of Vetiver grass planted for environmental remediation',
-    imageCaption: 'Deep-rooted Vetiver grass buffer belts establishing bio-curtain along drainage margin',
-    imageAttribution: 'Forest & Kim Starr / Wikimedia Commons (CC BY-SA 4.0)',
+    imageUrl: '/images/remediation/vetiver_phytoremediation_buffer.jpg',
+    imageAlt: 'Dense vegetative buffer belt of Chrysopogon zizanioides (Vetiver grass) planted for soil and groundwater remediation',
+    imageCaption: 'Field vegetative buffer planting of deep-rooted Vetiver grass (Chrysopogon zizanioides) for contaminant bio-interception',
+    imageAttribution: 'George Muttathil Pulikurumba / Wikimedia Commons (CC BY-SA 4.0)',
+    imageMetadata: {
+      technology: 'Phytoremediation Buffer Belts',
+      imageSource: 'Wikimedia Commons (File:Chrysopogon zizanioides.jpg)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Chrysopogon_zizanioides.jpg',
+      license: 'CC BY-SA 4.0',
+      attribution: 'George Muttathil Pulikurumba',
+      imageType: 'photograph',
+      verificationStatus: 'verified'
+    },
     iconName: 'Leaf',
     accentColor: '#15803d',
     bgLight: 'bg-emerald-50'
@@ -259,10 +286,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'IIT Kanpur Dept of Civil Engineering: Microbial Remediation of Tannery Wastewater & Aquifers (2023)',
       'Lovely et al. (2004) Dissimilatory Metal Reduction by Microorganisms'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80',
-    imageAlt: 'Microbiological laboratory testing and subsurface bacterial culture injection solution',
-    imageCaption: 'Microbiological culture preparation and bioreactor optimization for in-situ electron donor injection',
-    imageAttribution: 'Applied Biotechnology Research Archive',
+    imageUrl: '/images/remediation/in_situ_bioremediation_injection.png',
+    imageAlt: 'Hydrogeological diagram of in-situ subsurface bio-augmentation with injection wells, substrate delivery, and groundwater contaminant reduction zone',
+    imageCaption: 'Subsurface in-situ bio-augmentation schematic showing injection well delivery of substrate and microbes into contaminant plume',
+    imageAttribution: 'Hoodlind / Advances in Applied Microbiology (CC BY-SA 4.0)',
+    imageMetadata: {
+      technology: 'In-Situ Bio-Augmentation',
+      imageSource: 'Wikimedia Commons (File:In Situ Bioremediation.png, based on Jørgensen 2007)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:In_Situ_Bioremediation.png',
+      license: 'CC BY-SA 4.0',
+      attribution: 'Hoodlind / Advances in Applied Microbiology',
+      imageType: 'technical_diagram',
+      verificationStatus: 'verified'
+    },
     iconName: 'Waves',
     accentColor: '#4f46e5',
     bgLight: 'bg-indigo-50'
@@ -312,10 +348,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'CPCB Technical Criteria for Capping Hazardous Waste Dumps (2021)',
       'Benson & Daniel (2000) Geosynthetic Capping of Industrial Waste Repositories'
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/Geomembrane_installation.jpg',
-    imageAlt: 'Installation of heavy-duty impermeable HDPE geomembrane liner over industrial hazardous waste',
+    imageUrl: '/images/remediation/hdpe_geomembrane_soil_capping.jpg',
+    imageAlt: 'Field installation and thermal welding of thick impermeable HDPE geomembrane liner over contaminated industrial substrate',
     imageCaption: 'Field deployment and thermal welding of HDPE geomembrane barrier layer for hazardous waste isolation',
-    imageAttribution: 'Wikimedia Commons / Public Engineering Documentation',
+    imageAttribution: 'Werner W. Müller & Fokke Saathoff / Wikimedia Commons (CC BY 3.0)',
+    imageMetadata: {
+      technology: 'Vadose Zone Soil Capping',
+      imageSource: 'Wikimedia Commons (File:Geomembrane installation.jpg)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Geomembrane_installation.jpg',
+      license: 'CC BY 3.0',
+      attribution: 'Werner W. Müller and Fokke Saathoff',
+      imageType: 'photograph',
+      verificationStatus: 'verified'
+    },
     iconName: 'Layers',
     accentColor: '#c2410c',
     bgLight: 'bg-orange-50'
@@ -365,10 +410,19 @@ export const engineeredInterventionsData: EngineeredIntervention[] = [
       'ISO 15839: Water quality — On-line sensors/measuring devices',
       'CPCB Real-Time Water Quality Monitoring Network Guidelines (2022)'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=800&q=80',
-    imageAlt: 'Solar powered hydrological water quality telemetry monitoring station and data logger',
-    imageCaption: 'Solar-powered IoT sentinel wellhead station with submersible multiparameter sonde telemetry',
-    imageAttribution: 'Environmental Telemetry Systems Archive',
+    imageUrl: '/images/remediation/usgs_observation_well_telemetry.jpg',
+    imageAlt: 'Dedicated continuous groundwater monitoring observation well station equipped with submersible sensor instrumentation',
+    imageCaption: 'Dedicated continuous groundwater observation well telemetry station with submersible sonde monitoring',
+    imageAttribution: 'Michael Rivera / USGS Observation Network (CC BY-SA 3.0)',
+    imageMetadata: {
+      technology: 'Sentinel Telemetry Monitoring',
+      imageSource: 'Wikimedia Commons (File:Stephen C. Foster State Park USGS observation well, continuous water monitoring station.JPG)',
+      sourceUrl: 'https://commons.wikimedia.org/wiki/File:Stephen_C._Foster_State_Park_USGS_observation_well,_continuous_water_monitoring_station.JPG',
+      license: 'CC BY-SA 3.0',
+      attribution: 'Michael Rivera',
+      imageType: 'photograph',
+      verificationStatus: 'verified'
+    },
     iconName: 'Activity',
     accentColor: '#7c3aed',
     bgLight: 'bg-purple-50'
@@ -2002,6 +2056,17 @@ export default function RemediationPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex flex-col justify-end p-4 text-white text-xs font-mono">
                   <span className="font-bold">{selectedIntervention.imageCaption}</span>
                   <span className="text-stone-300 text-[11px]">{selectedIntervention.imageAttribution}</span>
+                  {selectedIntervention.imageMetadata && (
+                    <div className="mt-1 flex items-center gap-2 text-[10px] text-emerald-300 font-mono">
+                      <span className="bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/40 uppercase">
+                        Verified Technical Asset
+                      </span>
+                      <span>•</span>
+                      <span>{selectedIntervention.imageMetadata.imageType === 'technical_diagram' ? 'Engineering Schematic' : 'Field Photograph'}</span>
+                      <span>•</span>
+                      <span>{selectedIntervention.imageMetadata.license}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
